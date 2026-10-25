@@ -1,0 +1,93 @@
+# Render Blueprint for the CivicAI API (https://render.com/docs/blueprint-spec).
+#
+# One web service built from backend/ (Python version from backend/.python-version):
+#   build:  bash build.sh  - pip install, collectstatic, migrate, init_civicai --keep-existing
+#   start:  gunicorn config.wsgi -c gunicorn.conf.py
+# The database is an external MySQL 8 server (Railway, Aiven, ...) given as DATABASE_URL, e.g.
+#   mysql://user:password@host:3306/civicai
+# For TLS append ?ssl_verify_cert=true (certificate from a public CA) or ?ssl-ca=<CA file path relative to backend/>.
+# Not ?ssl_mode=REQUIRED: Render installs the PyMySQL driver, which rejects it (docs/DEPLOYMENT.md, "TLS options").
+# Values marked "sync: false" are secrets / deployment-specific URLs entered in the Render dashboard; they are never
+# stored in this file. The frontend (Vercel) is configured separately with VITE_API_URL=https://<service>/api.
+# The build runs the script through bash, so it does not depend on the file's executable bit in git.
+services:
+  - type: web
+    name: civicai-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: bash build.sh
+    startCommand: gunicorn config.wsgi -c gunicorn.conf.py
+    autoDeploy: true
+    envVars:
+      # --- Django core ---
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false # e.g. https://civicai.vercel.app
+      - key: CORS_ALLOWED_ORIGIN_REGEXES
+        sync: false # optional, e.g. ^https://civicai.*\.vercel\.app$ for preview deployments
+      - key: FRONTEND_URL
+        sync: false # e.g. https://civicai.vercel.app
+      - key: TIME_ZONE
+        value: Asia/Kolkata
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      # --- Database (MySQL 8) ---
+      - key: DB_ENGINE
+        value: mysql
+      - key: DATABASE_URL
+        sync: false
+      # --- JWT ---
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_MINUTES
+        value: "60"
+      - key: JWT_REFRESH_DAYS
+        value: "7"
+      # --- AI engine (demo = no trained weights needed; production also needs requirements-ml.txt and RAM) ---
+      - key: MODEL_MODE
+        value: demo
+      - key: MODEL_PATH
+        value: ./ml_models
+      # --- Uploads ---
+      - key: MAX_IMAGE_UPLOAD_MB
+        value: "8"
+      - key: SERVE_MEDIA
+        value: "True" # Django serves /media/ (single instance; files live on the instance disk)
+      - key: NUM_PROXIES
+        value: "1" # Render's proxy: throttling uses the real client address
+      # --- Maps / geocoding (OpenStreetMap Nominatim) ---
+      - key: DEFAULT_CITY
+        value: Hyderabad
+      - key: DEFAULT_LAT
+        value: "17.3850"
+      - key: DEFAULT_LNG
+        value: "78.4867"
+      - key: GEOCODING_ENABLED
+        value: "True"
+      - key: NOMINATIM_USER_AGENT
+        sync: false # Nominatim policy: identify the app, e.g. "CivicAI/1.0 (contact: you@your-college.edu)"
+      # --- Background jobs (optional; tasks run in-process when USE_CELERY=False) ---
+      - key: USE_CELERY
+        value: "False"
+      - key: REDIS_URL
+        sync: false # only needed with USE_CELERY=True
+      # --- First administrator (created / updated by init_civicai during the build when both are set) ---
+      - key: CIVICAI_ADMIN_EMAIL
+        sync: false
+      - key: CIVICAI_ADMIN_PASSWORD
+        sync: false
+      # --- Serving ---
+      - key: WEB_CONCURRENCY
+        value: "1" # one worker (~230 MB in demo mode) fits the 512 MB free instance; raise on bigger plans
+      - key: GUNICORN_THREADS
+        value: "4"
+      - key: LOG_LEVEL
+        value: INFO

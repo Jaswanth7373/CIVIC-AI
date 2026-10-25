@@ -1,0 +1,663 @@
+{
+  "mode": "production",
+  "model_version": "st-all-MiniLM-L6-v2-logreg-1.0",
+  "technique": "Sentence-Transformer embeddings + logistic regression",
+  "generated_at": "2026-10-17T10:05:02+00:00",
+  "accuracy": 0.9884,
+  "macro_f1": 0.9886,
+  "corpus": {
+    "file": "complaint_corpus.csv",
+    "rows": 864,
+    "sha256": "2338c292f646deafe9f4e38a86604d7cc63ffd633435cab688a847b2d5023e5b",
+    "class_counts": {
+      "drainage": 96,
+      "fallen_tree": 96,
+      "garbage": 96,
+      "open_manhole": 96,
+      "other": 96,
+      "pothole": 96,
+      "road_crack": 96,
+      "streetlight": 96,
+      "water_leak": 96
+    }
+  },
+  "split": {
+    "test_size": 0.2,
+    "random_state": 42,
+    "stratified": true,
+    "train_rows": 691,
+    "test_rows": 173,
+    "train_seconds": 1.76
+  },
+  "holdout": {
+    "accuracy": 0.9884,
+    "macro_f1": 0.9886,
+    "weighted_f1": 0.9884,
+    "per_class": {
+      "drainage": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 19.0
+      },
+      "fallen_tree": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 19.0
+      },
+      "garbage": {
+        "precision": 1.0,
+        "recall": 0.9474,
+        "f1-score": 0.973,
+        "support": 19.0
+      },
+      "open_manhole": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 20.0
+      },
+      "other": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 19.0
+      },
+      "pothole": {
+        "precision": 0.95,
+        "recall": 1.0,
+        "f1-score": 0.9744,
+        "support": 19.0
+      },
+      "road_crack": {
+        "precision": 0.95,
+        "recall": 0.95,
+        "f1-score": 0.95,
+        "support": 20.0
+      },
+      "streetlight": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 19.0
+      },
+      "water_leak": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 19.0
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "drainage",
+        "fallen_tree",
+        "garbage",
+        "open_manhole",
+        "other",
+        "pothole",
+        "road_crack",
+        "streetlight",
+        "water_leak"
+      ],
+      "matrix": [
+        [
+          19,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          19,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          18,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          19,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          19,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          19,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          19,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          19
+        ]
+      ]
+    },
+    "misclassified": [
+      {
+        "text": "The newly laid road already has cracks near the old age home since 10 days and it may turn into a pothole soon.",
+        "true": "road_crack",
+        "predicted": "pothole"
+      },
+      {
+        "text": "Maa colny lo chetat antha roddu meeda padi undi",
+        "true": "garbage",
+        "predicted": "road_crack"
+      }
+    ]
+  },
+  "challenge": {
+    "accuracy": 0.9222,
+    "macro_f1": 0.9239,
+    "weighted_f1": 0.9239,
+    "per_class": {
+      "drainage": {
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1-score": 0.9474,
+        "support": 10.0
+      },
+      "fallen_tree": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 10.0
+      },
+      "garbage": {
+        "precision": 1.0,
+        "recall": 0.8,
+        "f1-score": 0.8889,
+        "support": 10.0
+      },
+      "open_manhole": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 10.0
+      },
+      "other": {
+        "precision": 0.7143,
+        "recall": 1.0,
+        "f1-score": 0.8333,
+        "support": 10.0
+      },
+      "pothole": {
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1-score": 0.9474,
+        "support": 10.0
+      },
+      "road_crack": {
+        "precision": 0.9,
+        "recall": 0.9,
+        "f1-score": 0.9,
+        "support": 10.0
+      },
+      "streetlight": {
+        "precision": 1.0,
+        "recall": 0.8,
+        "f1-score": 0.8889,
+        "support": 10.0
+      },
+      "water_leak": {
+        "precision": 0.8333,
+        "recall": 1.0,
+        "f1-score": 0.9091,
+        "support": 10.0
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "drainage",
+        "fallen_tree",
+        "garbage",
+        "open_manhole",
+        "other",
+        "pothole",
+        "road_crack",
+        "streetlight",
+        "water_leak"
+      ],
+      "matrix": [
+        [
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          8,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          10,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          9,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          8,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          10
+        ]
+      ]
+    },
+    "accuracy_with_keywords": 0.9333,
+    "macro_f1_with_keywords": 0.9351,
+    "misclassified": [
+      {
+        "text": "Please patch the craters near the hospital gate, ambulances are struggling.",
+        "true": "pothole",
+        "predicted": "road_crack",
+        "predicted_with_keywords": "road_crack"
+      },
+      {
+        "text": "Construction waste and broken tiles dumped on the footpath by the builder.",
+        "true": "garbage",
+        "predicted": "other",
+        "predicted_with_keywords": "garbage"
+      },
+      {
+        "text": "Door to door collection has stopped in our apartment block.",
+        "true": "garbage",
+        "predicted": "other",
+        "predicted_with_keywords": "other"
+      },
+      {
+        "text": "Ankle deep water outside the metro station after a 10 minute shower.",
+        "true": "drainage",
+        "predicted": "water_leak",
+        "predicted_with_keywords": "water_leak"
+      },
+      {
+        "text": "The whole stretch from the bus stop to our colony is pitch dark after 7 pm.",
+        "true": "streetlight",
+        "predicted": "other",
+        "predicted_with_keywords": "streetlight"
+      },
+      {
+        "text": "The transformer near the park is humming loudly and smoking.",
+        "true": "streetlight",
+        "predicted": "other",
+        "predicted_with_keywords": "other"
+      },
+      {
+        "text": "Large fissures across the lane, water seeps in when it rains.",
+        "true": "road_crack",
+        "predicted": "water_leak",
+        "predicted_with_keywords": "water_leak"
+      },
+      {
+        "text": "The public toilet near the bus stand has no water and is locked.",
+        "true": "other",
+        "predicted": "other",
+        "predicted_with_keywords": "water_leak"
+      }
+    ]
+  },
+  "sentiment": {
+    "feedback_corpus": {
+      "accuracy": 0.9607,
+      "macro_f1": 0.9587,
+      "weighted_f1": 0.9605,
+      "per_class": {
+        "positive": {
+          "precision": 0.9697,
+          "recall": 1.0,
+          "f1-score": 0.9846,
+          "support": 64.0
+        },
+        "neutral": {
+          "precision": 0.9412,
+          "recall": 0.9231,
+          "f1-score": 0.932,
+          "support": 52.0
+        },
+        "negative": {
+          "precision": 0.9672,
+          "recall": 0.9516,
+          "f1-score": 0.9593,
+          "support": 62.0
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "positive",
+          "neutral",
+          "negative"
+        ],
+        "matrix": [
+          [
+            64,
+            0,
+            0
+          ],
+          [
+            2,
+            48,
+            2
+          ],
+          [
+            0,
+            3,
+            59
+          ]
+        ]
+      },
+      "rows": 178,
+      "method": "transformer",
+      "model_version": "cardiffnlp/twitter-roberta-base-sentiment-latest",
+      "fallback_reason": null,
+      "seconds": 6.24,
+      "errors": [
+        {
+          "text": "Average work, nothing special.",
+          "true": "neutral",
+          "predicted": "negative",
+          "score": -0.4288
+        },
+        {
+          "text": "It is fine for now, will check again after the rain.",
+          "true": "neutral",
+          "predicted": "positive",
+          "score": 0.5812
+        },
+        {
+          "text": "They removed the garbage and left.",
+          "true": "neutral",
+          "predicted": "negative",
+          "score": -0.5226
+        },
+        {
+          "text": "It is okay, the work is done.",
+          "true": "neutral",
+          "predicted": "positive",
+          "score": 0.6776
+        },
+        {
+          "text": "The pothole is still there, they just marked it resolved.",
+          "true": "negative",
+          "predicted": "neutral",
+          "score": -0.2405
+        },
+        {
+          "text": "The work stopped halfway.",
+          "true": "negative",
+          "predicted": "neutral",
+          "score": -0.0351
+        },
+        {
+          "text": "The tree branches are still lying on the road.",
+          "true": "negative",
+          "predicted": "neutral",
+          "score": -0.3747
+        }
+      ]
+    },
+    "feedback_challenge": {
+      "accuracy": 0.9667,
+      "macro_f1": 0.9667,
+      "weighted_f1": 0.9667,
+      "per_class": {
+        "positive": {
+          "precision": 1.0,
+          "recall": 0.95,
+          "f1-score": 0.9744,
+          "support": 20.0
+        },
+        "neutral": {
+          "precision": 0.9524,
+          "recall": 1.0,
+          "f1-score": 0.9756,
+          "support": 20.0
+        },
+        "negative": {
+          "precision": 0.95,
+          "recall": 0.95,
+          "f1-score": 0.95,
+          "support": 20.0
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "positive",
+          "neutral",
+          "negative"
+        ],
+        "matrix": [
+          [
+            19,
+            0,
+            1
+          ],
+          [
+            0,
+            20,
+            0
+          ],
+          [
+            0,
+            1,
+            19
+          ]
+        ]
+      },
+      "rows": 60,
+      "method": "transformer",
+      "model_version": "cardiffnlp/twitter-roberta-base-sentiment-latest",
+      "fallback_reason": null,
+      "seconds": 1.81,
+      "errors": [
+        {
+          "text": "Glad the dangerous branch was removed before anyone got hurt.",
+          "true": "positive",
+          "predicted": "negative",
+          "score": -0.7029
+        },
+        {
+          "text": "Shoddy work, the cover is already loose.",
+          "true": "negative",
+          "predicted": "neutral",
+          "score": -0.3855
+        }
+      ]
+    }
+  },
+  "severity_hint": {
+    "exact_accuracy": 0.4838,
+    "within_one_level": 0.9664,
+    "confusion_matrix": {
+      "labels": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "matrix": [
+        [
+          70,
+          124,
+          3,
+          0
+        ],
+        [
+          34,
+          210,
+          67,
+          0
+        ],
+        [
+          5,
+          86,
+          108,
+          9
+        ],
+        [
+          0,
+          21,
+          97,
+          30
+        ]
+      ]
+    }
+  },
+  "full_training": {
+    "rows": 864,
+    "seconds": 1.9,
+    "cache": "C:\\Users\\jaswa\\Downloads\\civic project\\backend\\ml_models\\nlp\\text_clf_st.joblib"
+  },
+  "environment": {
+    "python": "3.13.3",
+    "scikit_learn": "1.8.0",
+    "numpy": "2.4.3"
+  },
+  "seconds_total": 28.8
+}

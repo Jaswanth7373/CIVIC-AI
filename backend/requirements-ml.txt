@@ -1,0 +1,11 @@
+# CivicAI - deep learning requirements for MODEL_MODE=production
+# These are large downloads (PyTorch). Demo mode does NOT need them.
+#   pip install -r requirements-ml.txt
+-r requirements.txt
+
+torch>=2.3
+torchvision>=0.18
+ultralytics>=8.3            # YOLO object detection (civic issue detector)
+transformers>=4.44          # Hugging Face sentiment model
+sentence-transformers>=3.0  # Text embeddings (all-MiniLM-L6-v2) + CLIP image embeddings
+pyyaml>=6.0                 # dataset YAML for scripts/train_yolo.py

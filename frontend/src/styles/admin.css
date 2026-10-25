@@ -1,0 +1,255 @@
+/* ==========================================================================
+   Operations-centre motion and signals (APP-ADMIN, cinematic wave 2).
+
+   Plain CSS, imported by the admin insight components and the chart / map
+   wrappers that use these classes. Colours are written out (they mirror the
+   tokens in index.css) so this file never depends on which theme variables
+   Tailwind happens to emit. Everything here is decoration on top of content
+   that is complete without it: with reduced motion it is hidden or still.
+
+   1. AI scan band - the yellow survey light of the 3D city, sweeping once
+      over a panel (KPI board on first view) or looping while work runs
+      (Run checks now, re-clustering on the hotspot map).
+   2. Signal ping - the refresh dot next to "Updated 12:37 PM".
+   3. Chart tooltip entrance.
+   4. Hotspot badge entrance on the maps (first appearance only).
+   5. Matrix cells, merge choreography helpers.
+   ========================================================================== */
+
+:root {
+  --ops-scan-core: rgb(204 150 0 / 0.5);
+  --ops-scan-glow: rgb(245 183 0 / 0.12);
+  --ops-scan-haze: rgb(245 183 0 / 0.045);
+}
+
+.dark {
+  --ops-scan-core: rgb(255 212 71 / 0.8);
+  --ops-scan-glow: rgb(255 199 87 / 0.1);
+  --ops-scan-haze: rgb(255 199 87 / 0.035);
+}
+
+/* --- 1. AI scan band ---------------------------------------------------------------------------------
+   An absolutely positioned layer (inset 0) inside a positioned, clipping parent. The band is the layer's
+   ::before, as wide as the panel, with its light at the centre; translating it from -56% to +56% carries
+   that centre from just outside the left edge (-6%) to just outside the right edge (106%) at a nearly
+   constant speed, like a scanner head. Transform and opacity only. KpiStrip mirrors these timings
+   (SCAN_DELAY, SCAN_DURATION, SCAN_EASE) to start each number as the light reaches it. */
+.ops-scan {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.ops-scan::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 0.75px), var(--ops-scan-core) 50%, transparent calc(50% + 0.75px)),
+    linear-gradient(90deg, transparent 36%, var(--ops-scan-glow) 50%, transparent 64%),
+    linear-gradient(90deg, transparent 18%, var(--ops-scan-haze) 50%, transparent 82%);
+  opacity: 0;
+  transform: translateX(-56%);
+  will-change: transform, opacity;
+}
+
+.ops-scan[data-scan="once"]::before {
+  animation: civic-ops-scan 1.15s cubic-bezier(0.25, 0.1, 0.3, 1) 0.05s 1 both;
+}
+
+.ops-scan[data-scan="loop"]::before {
+  animation: civic-ops-scan 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes civic-ops-scan {
+  0% {
+    opacity: 0;
+    transform: translateX(-56%);
+  }
+  10%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(56%);
+  }
+}
+
+/* Reading: a KPI value materialises as the scan band passes over its cell (KpiStrip sets --read-delay per
+   cell). Paused - and held at its first frame - until the board is on screen ([data-seen]), so nobody ever
+   sees a placeholder zero; the value then counts up from there. */
+.ops-reading {
+  animation: civic-reading 280ms cubic-bezier(0.22, 1, 0.36, 1) var(--read-delay, 0s) both;
+  animation-play-state: paused;
+}
+
+[data-seen] .ops-reading {
+  animation-play-state: running;
+}
+
+@keyframes civic-reading {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(3px);
+  }
+}
+
+/* --- 2. Signal ping -------------------------------------------------------------------------------------
+   A small dot in the current text colour; remounting it (React key = the data's timestamp) replays one
+   ring, so a refresh is acknowledged without anything blinking forever. */
+.ops-signal {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.ops-signal::before,
+.ops-signal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+}
+
+.ops-signal::after {
+  opacity: 0;
+  animation: civic-signal-ping 1.2s cubic-bezier(0, 0, 0.2, 1) 0.15s 1;
+}
+
+@keyframes civic-signal-ping {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+
+/* --- 3. Chart tooltip entrance ------------------------------------------------------------------------- */
+.chart-tooltip {
+  animation: civic-tooltip-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: 50% 100%;
+}
+
+@keyframes civic-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.97);
+  }
+}
+
+/* Value labels on bars and line ends mount when a series animation ends (Recharts hides them while it runs);
+   they fade in instead of popping. */
+.chart-plot .recharts-label-list {
+  animation: civic-labels-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes civic-labels-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* --- 4. Hotspot count badges -------------------------------------------------------------------------------
+   The badge rises out of the map with a small overshoot, largest hotspots first (--enter-delay). Only the
+   first icon of a badge carries [data-enter]; icons swapped in later (zoom de-overlap) appear in place. */
+.civic-map-hotspot [data-enter] {
+  animation: civic-hotspot-in 560ms
+    var(--ease-spring-bounce, linear(0, 0.081, 0.27, 0.496, 0.712, 0.888, 1.014, 1.089, 1.122, 1.124, 1.107, 1.08, 1.051, 1.026, 1.006, 0.993, 0.986, 0.984, 0.985, 0.988, 0.992, 1))
+    var(--enter-delay, 0ms) both;
+}
+
+@keyframes civic-hotspot-in {
+  from {
+    opacity: 0;
+    scale: 0.35;
+  }
+}
+
+/* The selected hotspot's dashed ring on the hotspot map: the dashes (10 + 8 px) flow round it like lane
+   markings, one period every 1.6 s. */
+.civic-selection-ring {
+  animation: civic-ring-flow 1.6s linear infinite;
+}
+
+/* A programmatic flight (MapFocus marks the map .civic-flying): Leaflet scales the vector layer on the way, which
+   would balloon the 2-3 px hotspot circles into thick blurred rings. The circles wait out the flight - badges and
+   tiles keep moving - and fade back in when the map lands. */
+.leaflet-container .leaflet-overlay-pane {
+  transition: opacity 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.leaflet-container.civic-flying .leaflet-overlay-pane {
+  opacity: 0;
+  transition: none;
+}
+
+@keyframes civic-ring-flow {
+  to {
+    stroke-dashoffset: -36;
+  }
+}
+
+/* --- 5. Matrix cells -------------------------------------------------------------------------------------------
+   Confusion-matrix cells settle in along the diagonal (--cell-delay set per cell), held until the matrix is
+   on screen ([data-seen] on an ancestor). */
+.ops-cell-in {
+  animation: civic-cell-in 420ms cubic-bezier(0.16, 1, 0.3, 1) var(--cell-delay, 0ms) both;
+  animation-play-state: paused;
+}
+
+[data-seen] .ops-cell-in {
+  animation-play-state: running;
+}
+
+@keyframes civic-cell-in {
+  from {
+    opacity: 0;
+    scale: 0.82;
+  }
+}
+
+/* --- Reduced motion and forced colours ------------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .ops-scan,
+  .ops-signal::after {
+    display: none;
+  }
+
+  .chart-tooltip,
+  .chart-plot .recharts-label-list,
+  .civic-selection-ring,
+  .civic-map-hotspot [data-enter],
+  .ops-cell-in,
+  .ops-reading {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ops-scan {
+    display: none;
+  }
+}
+
+/* A printed report shows every figure, whether or not its board was ever scrolled into view. */
+@media print {
+  .ops-scan {
+    display: none;
+  }
+
+  .ops-reading,
+  .ops-cell-in {
+    animation: none;
+  }
+}

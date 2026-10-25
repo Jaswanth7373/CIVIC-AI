@@ -1,0 +1,1158 @@
+/* ==========================================================================
+   CivicAI design system - "civic signage"
+   Tailwind CSS v4 (CSS-first config). Palette drawn from road infrastructure:
+   highway-sign green (primary), road-marking yellow (accent / wayfinding),
+   asphalt & concrete neutrals, signal red / hazard orange / guide blue for meaning.
+   Colour is used for meaning (status, severity, priority), never decoration.
+   ========================================================================== */
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Overpass", "Public Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Highway-sign green - primary actions, brand */
+  --color-sign-50: #ecf7f2;
+  --color-sign-100: #d1ece0;
+  --color-sign-200: #a3d8c2;
+  --color-sign-300: #6dbf9f;
+  --color-sign-400: #35a17b;
+  --color-sign-500: #12845f;
+  --color-sign-600: #0b6e4f;
+  --color-sign-700: #095a41;
+  --color-sign-800: #074734;
+  --color-sign-900: #053627;
+  --color-sign-950: #02221a;
+
+  /* Road-marking yellow - wayfinding accent (lane lines, focus, "Report" CTA) */
+  --color-marking-50: #fff9e1;
+  --color-marking-100: #fff0b3;
+  --color-marking-200: #ffe27a;
+  --color-marking-300: #ffd447;
+  --color-marking-400: #fbc41a;
+  --color-marking-500: #f5b700;
+  --color-marking-600: #cc9600;
+  --color-marking-700: #9c7200;
+  --color-marking-800: #6f5100;
+  --color-marking-900: #4a3600;
+
+  /* Asphalt - neutrals (slightly green-grey, never pure black) */
+  --color-asphalt-50: #f3f5f4;
+  --color-asphalt-100: #e7ebe9;
+  --color-asphalt-200: #d3dad7;
+  --color-asphalt-300: #b4bfbb;
+  --color-asphalt-400: #8c9a96;
+  --color-asphalt-500: #6a7a77;
+  --color-asphalt-600: #52615f;
+  --color-asphalt-700: #3d4a49;
+  --color-asphalt-800: #283233;
+  --color-asphalt-850: #1f2829;
+  --color-asphalt-900: #172022;
+  --color-asphalt-950: #0f1617;
+
+  /* Signal red - critical / danger */
+  --color-signal-50: #fdeeeb;
+  --color-signal-100: #fbd5ce;
+  --color-signal-200: #f6aa9c;
+  --color-signal-300: #ef7b66;
+  --color-signal-400: #e45539;
+  --color-signal-500: #d3341f;
+  --color-signal-600: #b52817;
+  --color-signal-700: #8f1f12;
+  --color-signal-800: #6b170e;
+  --color-signal-900: #4a1009;
+
+  /* Hazard orange - high severity / priority */
+  --color-hazard-50: #fef3e8;
+  --color-hazard-100: #fde0c4;
+  --color-hazard-200: #fbc08a;
+  --color-hazard-300: #f79c4f;
+  --color-hazard-400: #f08327;
+  --color-hazard-500: #e8730c;
+  --color-hazard-600: #c25c06;
+  --color-hazard-700: #984605;
+  --color-hazard-800: #6f3304;
+  --color-hazard-900: #4a2203;
+
+  /* Guide blue - information, "assigned" */
+  --color-guide-50: #ebf2fb;
+  --color-guide-100: #cfe0f5;
+  --color-guide-200: #9fc1eb;
+  --color-guide-300: #6a9edd;
+  --color-guide-400: #3d7fcd;
+  /* Data marks on dark surfaces (meter bars, labelled bar segments): >= 3:1 against the dark track and card,
+     and >= 5:1 under white labels - guide-400 is too light for white text, guide-500 too dark on the track. */
+  --color-guide-450: #2f70be;
+  --color-guide-500: #1f5fad;
+  --color-guide-600: #184d8e;
+  --color-guide-700: #133c6f;
+  --color-guide-800: #0e2c51;
+  --color-guide-900: #091d36;
+
+  /* Radius scale - hierarchy, not one radius everywhere */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+
+  /* Elevation only for things that float (menus, modals, toasts) */
+  --shadow-overlay: 0 18px 40px -12px rgb(15 22 23 / 0.28), 0 4px 12px -4px rgb(15 22 23 / 0.16);
+  --shadow-raise: 0 1px 2px rgb(15 22 23 / 0.06), 0 1px 1px rgb(15 22 23 / 0.04);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Semantic, theme-aware tokens. Use these utilities instead of raw palette in UI:
+   bg-bg bg-surface bg-surface-2 bg-sunken border-line border-line-strong
+   text-ink text-ink-2 text-ink-3 bg-primary hover:bg-primary-hover bg-primary-soft text-primary-ink
+   bg-sidebar bg-sidebar-2                                                                   */
+:root {
+  color-scheme: light;
+  --c-bg: #eef1f0; /* concrete */
+  --c-surface: #ffffff;
+  --c-surface-2: #f6f8f7;
+  --c-sunken: #e4e9e7;
+  --c-line: #d6ddda;
+  --c-line-strong: #b9c4c0;
+  --c-ink: #142022;
+  --c-ink-2: #45555a;
+  --c-ink-3: #58686c; /* >= 4.7:1 on every light surface (sunken 4.74, surface 5.81): WCAG AA for meta text */
+  --c-primary: #0b6e4f;
+  --c-primary-hover: #095a41;
+  --c-primary-soft: #e3f3ec;
+  --c-primary-ink: #0b6e4f;
+  --c-focus: #f5b700;
+  --c-sidebar: #172022; /* asphalt in both themes */
+  --c-sidebar-2: #1f2a2c;
+  --c-overlay: rgb(15 22 23 / 0.55);
+}
+
+.dark {
+  color-scheme: dark;
+  --c-bg: #0f1617;
+  --c-surface: #172022;
+  --c-surface-2: #1c2628;
+  --c-sunken: #0b1112;
+  --c-line: #2a3537;
+  --c-line-strong: #3a4749;
+  --c-ink: #e6ecea;
+  --c-ink-2: #a7b4b1;
+  --c-ink-3: #8e9e9c; /* >= 4.9:1 on every dark surface incl. primary-soft (surface-2 5.54): WCAG AA */
+  --c-primary: #12845f;
+  --c-primary-hover: #35a17b;
+  --c-primary-soft: rgb(18 132 95 / 0.18);
+  --c-primary-ink: #4cc497;
+  --c-sidebar: #0b1213;
+  --c-sidebar-2: #131c1d;
+  --c-overlay: rgb(0 0 0 / 0.65);
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-sunken: var(--c-sunken);
+  --color-line: var(--c-line);
+  --color-line-strong: var(--c-line-strong);
+  --color-ink: var(--c-ink);
+  --color-ink-2: var(--c-ink-2);
+  --color-ink-3: var(--c-ink-3);
+  --color-primary: var(--c-primary);
+  --color-primary-hover: var(--c-primary-hover);
+  --color-primary-soft: var(--c-primary-soft);
+  --color-primary-ink: var(--c-primary-ink);
+  --color-focus: var(--c-focus);
+  --color-sidebar: var(--c-sidebar);
+  --color-sidebar-2: var(--c-sidebar-2);
+  --color-overlay: var(--c-overlay);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--c-bg);
+    color: var(--c-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: #ffe27a;
+    color: #142022;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.4;
+  }
+}
+
+/* --- Signature motifs ---------------------------------------------------- */
+
+/* Dashed road-marking line (vertical): timeline connector, active nav marker, "how it works" road */
+@utility lane-line {
+  background-image: repeating-linear-gradient(to bottom, var(--color-marking-500) 0 10px, transparent 10px 18px);
+}
+
+/* Dashed road-marking line (horizontal) */
+@utility lane-line-x {
+  background-image: repeating-linear-gradient(to right, var(--color-marking-500) 0 12px, transparent 12px 22px);
+}
+
+/* Highway sign panel: green field with an inset white border. Use once per screen at most. */
+@utility sign-panel {
+  background-color: var(--color-sign-600);
+  color: #ffffff;
+  border-radius: var(--radius-xl);
+  box-shadow: inset 0 0 0 4px var(--color-sign-600), inset 0 0 0 6px #ffffff;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-line-strong) transparent;
+}
+
+/* --- Leaflet ------------------------------------------------------------- */
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--c-sunken);
+  z-index: 0;
+}
+
+.leaflet-container a {
+  color: var(--c-primary-ink);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--c-surface);
+  color: var(--c-ink);
+  box-shadow: var(--shadow-overlay);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-lg);
+}
+
+/* --- Motion preferences --------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    /* 0s, not 0.01ms: transition-property defaults to `all`, so any non-zero duration here would start a
+       transition on every element for every style change (a theme switch started ~1,200 of them and left the
+       page in its old colours for a few frames). Nothing in the app waits for transitionend, and Leaflet's
+       zoom has its own fallback timer. */
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Print (reports) ------------------------------------------------------ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+}
+
+/* ==========================================================================
+   Foundation additions (F1). Appended only: every token and utility above is
+   unchanged.
+   ========================================================================== */
+@theme {
+  /* Moving road marking for loaders and table refresh bars. The shift (22px) equals one
+     dash + gap period of lane-line-x, so the loop is seamless. */
+  --animate-lane: lane-move 0.7s linear infinite;
+
+  @keyframes lane-move {
+    to {
+      background-position: 22px 0;
+    }
+  }
+}
+
+@layer base {
+  /* Tailwind v4 gives buttons the default cursor; interactive controls show a pointer. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+
+  /* Browser autofill (login / register forms) keeps the theme colours instead of the UA fill. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    -webkit-text-fill-color: var(--c-ink);
+    caret-color: var(--c-ink);
+    box-shadow: 0 0 0 1000px var(--c-surface) inset;
+    transition: background-color 9999s ease-out 0s;
+  }
+}
+
+/* Horizontally scrolling strips (tabs) stay scrollable without a visible scrollbar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Leaflet controls follow the theme (zoom buttons, attribution, popup close button). */
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--c-ink-3);
+}
+
+.dark .leaflet-bar a {
+  background-color: var(--c-surface);
+  border-bottom-color: var(--c-line);
+  color: var(--c-ink);
+}
+
+.dark .leaflet-bar a:hover {
+  background-color: var(--c-surface-2);
+}
+
+.dark .leaflet-control-attribution {
+  background: rgb(15 22 23 / 0.78);
+  color: var(--c-ink-2);
+}
+
+/* ==========================================================================
+   Cinematic additions (MOTION, wave 1). Appended only: every token, utility
+   and rule above is unchanged. Contents:
+   1. Motion vocabulary - CSS twins of components/motion/tokens.js
+   2. Elevation system - base / raised / floating / overlay, both themes
+   3. Public header height (--public-header-h) and scroll padding
+   4. Fluid display type scale
+   5. Focus rings that animate in
+   6. Skeleton sheen (the AI scan band, as a loading shimmer)
+   7. Route progress lane, tilt glare, toast timer, table row entrance
+   8. Reduced motion and forced colours
+   ========================================================================== */
+
+/* --- 1. Motion vocabulary -------------------------------------------------
+   Durations: --dur-instant 90ms (press), --dur-fast 150ms (hover, checks),
+   --dur-base 220ms (menus), --dur-route 280ms, --dur-slow 360ms (dialogs),
+   --dur-slower 500ms. Easings (also Tailwind utilities `ease-standard`,
+   `ease-enter`, `ease-exit`, `ease-spring`, `ease-spring-bounce`):
+   standard = house curve, enter = expo-out, exit = accelerate,
+   spring = critically damped spring with a 4% settle (linear()),
+   spring-bounce = 12% overshoot for small delights (check marks, thumbs). */
+@theme {
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: linear(0, 0.047, 0.16, 0.305, 0.457, 0.599, 0.724, 0.827, 0.906, 0.964, 1.004, 1.028, 1.041, 1.046, 1.045, 1.04, 1.034, 1.027, 1.02, 1.014, 1.009, 1);
+  --ease-spring-bounce: linear(0, 0.081, 0.27, 0.496, 0.712, 0.888, 1.014, 1.089, 1.122, 1.124, 1.107, 1.08, 1.051, 1.026, 1.006, 0.993, 0.986, 0.984, 0.985, 0.988, 0.992, 1);
+
+  --animate-focus-ring: civic-focus-ring-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-row-in: civic-row-in 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pop-in: civic-pop-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+:root {
+  --dur-instant: 90ms;
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-route: 280ms;
+  --dur-slow: 360ms;
+  --dur-slower: 500ms;
+
+  /* --- 3. Public header: one height for the header bar, the landing hero offset and scroll padding. */
+  --public-header-h: 4rem;
+
+  /* --- 2. Elevation (light): soft, layered, slightly green-grey like the asphalt neutrals.
+     base     = flat panels (border only) - the default for cards
+     raised   = interactive cards on hover, sticky bars once content scrolls under them
+     floating = menus, popovers, tooltips, toasts
+     overlay  = dialogs and drawers */
+  --elev-base: 0 0 #0000;
+  --elev-raised: 0 1px 2px rgb(15 22 23 / 0.05), 0 2px 6px -2px rgb(15 22 23 / 0.06), 0 12px 24px -14px rgb(15 22 23 / 0.2);
+  --elev-floating: 0 1px 2px rgb(15 22 23 / 0.06), 0 6px 16px -6px rgb(15 22 23 / 0.14), 0 22px 44px -18px rgb(15 22 23 / 0.26);
+  --elev-overlay: 0 2px 6px rgb(15 22 23 / 0.07), 0 24px 56px -14px rgb(15 22 23 / 0.32), 0 52px 100px -36px rgb(15 22 23 / 0.32);
+  --c-elevated: #ffffff;
+
+  /* Pointer glare on tilt cards: warm sodium streetlight, never a cold white "shine". */
+  --tilt-glare-color: rgb(245 183 0 / 0.1);
+  /* Skeleton sheen: the scan band, as a soft light passing over placeholders. */
+  --sheen-color: rgb(255 255 255 / 0.62);
+}
+
+.dark {
+  /* Dark elevation: shadows alone vanish on asphalt, so each level also gets a lit top edge (an inset
+     highlight) and a deeper, larger shadow; floating surfaces are a step lighter than panels. */
+  --elev-raised: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.5), 0 14px 28px -14px rgb(0 0 0 / 0.75);
+  --elev-floating: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 2px 6px rgb(0 0 0 / 0.45), 0 22px 48px -16px rgb(0 0 0 / 0.8);
+  --elev-overlay: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 4px 12px rgb(0 0 0 / 0.5), 0 40px 96px -24px rgb(0 0 0 / 0.9);
+  --c-elevated: #1b2628;
+
+  --tilt-glare-color: rgb(255 199 87 / 0.09);
+  --sheen-color: rgb(255 226 122 / 0.07);
+}
+
+@theme inline {
+  /* `bg-elevated`: the surface of floating layers (menus, popovers, dialogs, toasts). */
+  --color-elevated: var(--c-elevated);
+}
+
+@utility elev-base {
+  box-shadow: var(--elev-base);
+}
+
+@utility elev-raised {
+  box-shadow: var(--elev-raised);
+}
+
+@utility elev-floating {
+  box-shadow: var(--elev-floating);
+}
+
+@utility elev-overlay {
+  box-shadow: var(--elev-overlay);
+}
+
+@layer base {
+  /* Anchor jumps and keyboard focus never land under the sticky / overlaid headers. */
+  html {
+    scroll-padding-top: calc(var(--public-header-h) + 1rem);
+  }
+}
+
+/* --- 4. Fluid display type ---------------------------------------------------
+   Overpass, sized with clamp() between a 360px phone and a 1440px desktop
+   (rem + vw, so browser zoom still scales them). Tracking tightens and leading
+   closes as the size grows. Use on landing / public display headings:
+   display-2xl (hero) 48-104px, display-xl 40-76px, display-lg 32-56px,
+   display-md 26-40px, display-sm 20-28px; lead-fluid for intro paragraphs. */
+@utility display-2xl {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 1.6rem + 5.6vw, 6.5rem);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+@utility display-xl {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 1.55rem + 3.9vw, 4.75rem);
+  font-weight: 800;
+  line-height: 0.96;
+  letter-spacing: -0.034em;
+  text-wrap: balance;
+}
+
+@utility display-lg {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.35rem + 2.6vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+  text-wrap: balance;
+}
+
+@utility display-md {
+  font-family: var(--font-display);
+  font-size: clamp(1.625rem, 1.2rem + 1.7vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  text-wrap: balance;
+}
+
+@utility display-sm {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1.05rem + 0.85vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+@utility lead-fluid {
+  font-size: clamp(1.0625rem, 0.98rem + 0.4vw, 1.3125rem);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* --- 5. Focus rings that animate in ------------------------------------------
+   Only a `from` keyframe: the ring starts wide and clear and settles into each
+   element's own outline (colour, width and offset stay whatever the element
+   defines), so custom offsets such as -outline-offset-2 keep working. */
+@keyframes civic-focus-ring-in {
+  from {
+    outline-color: transparent;
+    outline-width: 6px;
+  }
+}
+
+@layer base {
+  :focus-visible {
+    animation: civic-focus-ring-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* --- 6. Skeleton sheen --------------------------------------------------------
+   One band of light sweeps across the WHOLE window (fixed attachment), so every
+   placeholder on screen is crossed by the same pass - the AI scan of the 3D city,
+   as a loading state. Off-screen at rest, so a stopped animation shows nothing. */
+@keyframes civic-sheen {
+  from {
+    background-position: -70vw 0;
+  }
+  to {
+    background-position: 170vw 0;
+  }
+}
+
+@utility skeleton {
+  background-color: var(--c-sunken);
+  background-image: linear-gradient(100deg, transparent 0%, transparent 30%, var(--sheen-color) 50%, transparent 70%, transparent 100%);
+  background-size: 70vw 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: -140vw 0;
+  animation: civic-sheen 1.9s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* --- 7. Route progress lane, tilt glare, toast timer, entrances -------------- */
+@keyframes civic-lane-flow {
+  to {
+    background-position: 22px 0;
+  }
+}
+
+/* Loading bar for page changes: a strip of asphalt along the top edge with a moving lane marking and a
+   lit leading edge (RouteProgress in components/motion). */
+.route-progress {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 95;
+  height: 3px;
+  pointer-events: none;
+}
+
+.route-progress-bar {
+  position: relative;
+  display: block;
+  height: 100%;
+  background-color: var(--color-asphalt-900);
+  background-image: repeating-linear-gradient(to right, var(--color-marking-400) 0 12px, transparent 12px 22px);
+  animation: civic-lane-flow 0.6s linear infinite;
+}
+
+.route-progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 56px;
+  height: 10px;
+  translate: 40% -50%;
+  background: radial-gradient(closest-side, rgb(255 212 71 / 0.85), rgb(255 212 71 / 0));
+}
+
+/* Pointer glare of TiltCard: a pool of warm light under the pointer (--tilt-x / --tilt-y), painted between
+   the card's background and its content (the card is isolated, the glare sits on layer -1), so text and
+   icons are never tinted. Shown while [data-tilt-active]. */
+.tilt-surface::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(16rem circle at var(--tilt-x, 50%) var(--tilt-y, 50%), var(--tilt-glare-color), transparent 72%);
+  transition: opacity var(--dur-slow) var(--ease-standard);
+}
+
+.tilt-surface[data-tilt-active]::before {
+  opacity: 1;
+}
+
+/* Toast time-left line (paused while the stack is hovered or focused). */
+@keyframes civic-toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.toast-timer {
+  transform-origin: left center;
+  animation: civic-toast-timer var(--toast-duration, 5s) linear forwards;
+}
+
+.toast-timer[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+/* First rows of a table / list fading in after their skeleton (DataTable, first load only). */
+@keyframes civic-row-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Small elements arriving with a lift (badges, chips, dialog icons). */
+@keyframes civic-pop-in {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+}
+
+/* Press feedback for buttons and icon buttons: a quick squeeze on press, a springy release. Colours keep
+   the house curve; only `scale` springs. --press-scale sets the depth (1 = none, e.g. text links). */
+@utility pressable {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, box-shadow, scale;
+  transition-duration: var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-base), 420ms;
+  transition-timing-function: var(--ease-standard), var(--ease-standard), var(--ease-standard), var(--ease-standard), var(--ease-standard), var(--ease-standard), var(--ease-standard), var(--ease-spring-bounce);
+
+  &:active {
+    scale: var(--press-scale, 0.97);
+    transition-duration: var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-fast), var(--dur-base), var(--dur-instant);
+    transition-timing-function: var(--ease-standard);
+  }
+}
+
+/* --- 8. Reduced motion and forced colours --------------------------------------
+   (The global rule above already stops every animation and transition.) */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    background-image: none;
+  }
+
+  .tilt-surface::before,
+  .route-progress-bar::after,
+  .toast-timer {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .tilt-surface::before,
+  .route-progress {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   System additions (SYSTEM, wave 2). Appended only: every token, utility and
+   rule above is unchanged. Contents:
+   1. View transitions - the theme reveal and the route cross-fade
+   2. Theme switch guard
+   3. Illustration tokens and entrances (components/illustrations)
+   4. Shell details - bell swing, loader road
+   5. Reduced motion and forced colours
+   ========================================================================== */
+
+/* --- 1. View transitions ------------------------------------------------------
+   Started from JS only where document.startViewTransition exists and never with
+   reduced motion (context/ThemeContext.jsx, components/layout/routeViewTransition.js).
+   While one runs the document carries data-view-transition="theme" | "route". */
+
+/* Input: while a transition runs, Chrome hit-tests its layer as the page root, so
+   clicks would land on <html> (pointer-events on the pseudo-elements does not
+   change that); components/ui/viewTransitionInput.js ends the transition and
+   replays such a click on the element under the pointer. */
+
+/* Theme: the new theme grows in a circle from the toggle, like a street switching
+   its lights on (or off). The circle itself is animated from JS - its centre and
+   radius depend on the toggle and the window; here the default cross-fade is
+   switched off so the old theme stays whole outside the circle. */
+:root[data-view-transition="theme"]::view-transition-old(root),
+:root[data-view-transition="theme"]::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* The theme menu that asked for the switch is on its way out: keep it out of both snapshots, so the circle
+   sweeps over a clear page instead of leaving the old menu standing outside it. (!important: floating menus
+   set their visibility inline while they are positioned.) */
+:root[data-view-transition="theme"] [role="menu"] {
+  visibility: hidden !important;
+}
+
+/* Route: the page area cross-fades with a little depth - the old page settles back
+   as it fades, the new one rises 10px into place - while the shell (sidebar, top
+   bar, tab bar, public header) is captured on its own and stays put, so only the
+   content moves. The names exist only during a route transition, so the theme
+   reveal still sweeps over the whole window - and not when the navigation starts
+   under an open dialog or the palette (data-vt-overlay): the shell would then be
+   drawn above the dimmed backdrop, so the whole page cross-fades as one. */
+:root[data-view-transition="route"]:not([data-vt-overlay]) [data-vt-part="sidebar"] {
+  view-transition-name: civic-sidebar;
+}
+
+:root[data-view-transition="route"]:not([data-vt-overlay]) [data-vt-part="topbar"] {
+  view-transition-name: civic-topbar;
+}
+
+:root[data-view-transition="route"]:not([data-vt-overlay]) [data-vt-part="tabbar"] {
+  view-transition-name: civic-tabbar;
+}
+
+:root[data-view-transition="route"]:not([data-vt-overlay]) [data-vt-part="site-header"] {
+  view-transition-name: civic-site-header;
+}
+
+:root[data-view-transition="route"]::view-transition-old(root) {
+  animation: civic-vt-page-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+:root[data-view-transition="route"]::view-transition-new(root) {
+  animation: civic-vt-page-in 320ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both;
+}
+
+/* From under an overlay the shell is part of the root image, so it must not move: a plain cross-fade. */
+:root[data-view-transition="route"][data-vt-overlay]::view-transition-old(root) {
+  animation: civic-vt-fade-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+:root[data-view-transition="route"][data-vt-overlay]::view-transition-new(root) {
+  animation: civic-vt-fade-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+:root[data-view-transition="route"]::view-transition-group(civic-sidebar),
+:root[data-view-transition="route"]::view-transition-group(civic-topbar),
+:root[data-view-transition="route"]::view-transition-group(civic-tabbar),
+:root[data-view-transition="route"]::view-transition-group(civic-site-header),
+:root[data-view-transition="route"]::view-transition-new(civic-sidebar),
+:root[data-view-transition="route"]::view-transition-new(civic-topbar),
+:root[data-view-transition="route"]::view-transition-new(civic-tabbar),
+:root[data-view-transition="route"]::view-transition-new(civic-site-header) {
+  animation: none;
+}
+
+:root[data-view-transition="route"]::view-transition-old(civic-sidebar),
+:root[data-view-transition="route"]::view-transition-old(civic-topbar),
+:root[data-view-transition="route"]::view-transition-old(civic-tabbar),
+:root[data-view-transition="route"]::view-transition-old(civic-site-header) {
+  animation: none;
+  opacity: 0;
+}
+
+/* Shared element: a list item marked data-vt-morph="<detail path>" morphs into the
+   detail page's header marked data-vt-morph-target (names are set from JS for the
+   duration of that one transition). */
+:root[data-view-transition="route"]::view-transition-group(civic-morph) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes civic-vt-page-out {
+  to {
+    opacity: 0;
+    transform: scale(0.992);
+  }
+}
+
+@keyframes civic-vt-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes civic-vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes civic-vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* --- 2. Theme switch guard ------------------------------------------------------
+   Fallback only, for browsers without document.getAnimations(): for the one style
+   recalculation in which the theme flips, colour transitions are off, so every
+   surface changes in the same frame (no half-light, half-dark frame and no top bar
+   fading on its own inside the reveal circle). Elsewhere ThemeContext finishes the
+   transitions the flip starts instead - setting and removing this universal rule
+   re-styles every element twice, which held the reveal back. */
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after {
+  transition: none !important;
+}
+
+/* --- 3. Illustrations ------------------------------------------------------------
+   Road-sign scenes for empty and error states. Every colour is a token here, so
+   one drawing serves both themes: concrete and grey asphalt by day; at night the
+   asphalt darkens and the street lamp and a few windows light up. Sign faces keep
+   their real colours in both themes (green guide, yellow warning, red prohibition,
+   blue information), as road signs do. */
+:root {
+  --ill-ground: #dfe5e2;
+  --ill-road: #c7d0cd;
+  --ill-road-edge: #f9fbfa;
+  --ill-lane: #f5b700;
+  --ill-post: #8c9a96;
+  --ill-post-dark: #6a7a77;
+  --ill-shade: rgb(15 22 23 / 0.16);
+  --ill-skyline: #dce2df;
+  --ill-window: rgb(255 255 255 / 0);
+  --ill-lamp-head: #9aa7a3;
+  --ill-glow: rgb(255 196 64 / 0);
+  --ill-sign-shadow: rgb(15 22 23 / 0.18);
+}
+
+.dark {
+  --ill-ground: #131c1e;
+  --ill-road: #222d2f;
+  --ill-road-edge: #435150;
+  --ill-lane: #dca300;
+  --ill-post: #4d5b5a;
+  --ill-post-dark: #3d4a49;
+  --ill-shade: rgb(0 0 0 / 0.55);
+  --ill-skyline: #1f2b2d;
+  --ill-window: rgb(255 205 96 / 0.6);
+  --ill-lamp-head: #ffd773;
+  --ill-glow: rgb(255 186 60 / 0.42);
+  --ill-sign-shadow: rgb(0 0 0 / 0.5);
+}
+
+/* One-time entrances (never with reduced motion): the road marks arrive toward the
+   viewer, the sign rises onto its post, a barrier drops into place and, at night,
+   the street lamp flickers on. */
+@media (prefers-reduced-motion: no-preference) {
+  .ill-dash {
+    animation: civic-ill-dash 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 80ms + 80ms);
+  }
+
+  .ill-rise {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: civic-ill-rise 720ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both;
+  }
+
+  .ill-drop {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: civic-ill-drop 620ms var(--ease-spring-bounce) 320ms both;
+  }
+
+  .ill-glow {
+    animation: civic-ill-flicker 1100ms linear 420ms both;
+  }
+}
+
+@keyframes civic-ill-dash {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes civic-ill-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scaleY(0.94);
+  }
+}
+
+@keyframes civic-ill-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes civic-ill-flicker {
+  0% {
+    opacity: 0;
+  }
+  14% {
+    opacity: 0.85;
+  }
+  22% {
+    opacity: 0.15;
+  }
+  34% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.5;
+  }
+  62%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* --- 4. Shell details ----------------------------------------------------------- */
+@theme {
+  /* The notification bell swings when a new notification arrives (NotificationBell). */
+  --animate-bell-ring: civic-bell-ring 1s cubic-bezier(0.36, 0, 0.2, 1) both;
+}
+
+@keyframes civic-bell-ring {
+  0% {
+    rotate: 0deg;
+  }
+  10% {
+    rotate: 18deg;
+  }
+  22% {
+    rotate: -15deg;
+  }
+  34% {
+    rotate: 11deg;
+  }
+  46% {
+    rotate: -7deg;
+  }
+  58% {
+    rotate: 4deg;
+  }
+  70% {
+    rotate: -2deg;
+  }
+  82%,
+  100% {
+    rotate: 0deg;
+  }
+}
+
+/* PageLoader: a short stretch of road seen from the driver's seat - asphalt receding
+   into a fade, edge lines, and the yellow centre marks flowing toward the viewer.
+   Reduced motion: the marks stand still. */
+:root {
+  --loader-road: #d3dad7;
+  --loader-edge: rgb(255 255 255 / 0.9);
+}
+
+.dark {
+  --loader-road: #222d2f;
+  --loader-edge: rgb(167 180 177 / 0.45);
+}
+
+.loader-road {
+  position: relative;
+  display: block;
+  width: 8rem;
+  height: 3rem;
+  overflow: hidden;
+  perspective: 4.5rem;
+  perspective-origin: 50% 0%;
+  mask-image: linear-gradient(to top, #000 50%, transparent);
+}
+
+.loader-road::before {
+  content: "";
+  position: absolute;
+  inset: -160% 24% 0;
+  transform: rotateX(70deg);
+  transform-origin: 50% 100%;
+  background-color: var(--loader-road);
+  background-image:
+    repeating-linear-gradient(to bottom, var(--color-marking-500) 0 14px, transparent 14px 26px),
+    linear-gradient(to right, var(--loader-edge) 0 2px, transparent 2px calc(100% - 2px), var(--loader-edge) calc(100% - 2px));
+  background-size: 3px 100%, 100% 100%;
+  background-position: 50% 0, 0 0;
+  background-repeat: repeat-y, no-repeat;
+  animation: civic-road-flow 0.6s linear infinite;
+}
+
+@keyframes civic-road-flow {
+  to {
+    background-position: 50% 26px, 0 0;
+  }
+}
+
+/* --- 5. Reduced motion and forced colours ------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .loader-road::before {
+    background-image: none;
+    border-inline: 2px solid CanvasText;
+  }
+}
+
+/* ==========================================================================
+   Shell additions (SHELL, round 2). Appended only: the rules above stay as they
+   are; section 1 re-points the --c-focus token they use. Contents:
+   1. Two-tone focus ring
+   2. Phone chrome never covers the focused field
+   3. Safe-area gutters (`safe-px`)
+   4. Route focus target
+   ========================================================================== */
+
+/* --- 1. Two-tone focus ring ---------------------------------------------------------
+   Two bands: the 2px outline at a 2px offset (outer band, the base-layer :focus-visible rule) and a 2px halo
+   filling that gap (inner band, a box-shadow that composes with the element's own shadow / ring utilities).
+   - Light: an ink outline (15.4:1 on concrete, 16.9:1 on white, 9.3:1 on a yellow control) around a
+     road-marking yellow inner band; yellow-filled controls get a white inner band, so the ring stands off
+     the fill.
+   - Dark (and the asphalt sidebar, dark in both themes): the road-marking yellow outline (9.8:1 on asphalt)
+     around an asphalt inner band, which separates it from yellow-filled controls (10:1 against the fill).
+   Ink and yellow are 9.3:1 apart, so on any other background - a green sign panel, glass over the 3D - one
+   of the two bands reads at 3:1 or more. Inset rings (-outline-offset-2: rows and tabs inside scrollers) keep
+   both bands inside the element. Forced colours drop the halo; the outline stays, in the system colour.
+   A subtree that is dark in the light theme can opt in to the night ring with data-focus-tone="dark". */
+:root {
+  --c-focus: #142022;
+  --c-focus-inner: #f5b700;
+}
+
+.dark,
+.bg-sidebar,
+[data-focus-tone="dark"] {
+  --c-focus: #f5b700;
+  --c-focus-inner: #0f1617;
+}
+
+@layer base {
+  :focus-visible:not([class*="outline-hidden"], [class*="outline-none"]) {
+    --tw-ring-offset-shadow: 0 0 0 2px var(--c-focus-inner);
+    box-shadow: var(--tw-ring-offset-shadow);
+  }
+
+  [class*="-outline-offset-"]:focus-visible {
+    --tw-ring-offset-shadow: inset 0 0 0 4px var(--c-focus-inner);
+  }
+
+  :root:not(.dark) :is([class*="bg-marking-500"], [class*="bg-marking-400"]):focus-visible {
+    --c-focus-inner: #ffffff;
+  }
+}
+
+/* --- 2. Phone chrome never covers the focused field -----------------------------------
+   Below md the citizen tab bar (fixed, with its raised Report button), the detail pages' dock and the report
+   wizard / form action bars (sticky, styles/app.css) sit over the bottom of the screen, and browsers scroll a
+   focused field only just into view - under that chrome (WCAG 2.4.11). So:
+   - the document reserves the chrome as bottom scroll padding: focus, anchor and find-in-page scrolling stop
+     above it. Controls inside the bars themselves opt out (scroll-margin), so tabbing onto a bar never scrolls;
+   - while a text field has focus (the on-screen keyboard is up), the tab bar and the dock slide away - on pages
+     without a wizard / form bar. Those bars float above the tab bar and never move while a field is focused:
+     moving them on blur would pull the button out from under a click that starts by blurring the field;
+   - on the report page the raised Report button is a flat tab (MobileTabBar, data-report-fab="off"): the
+     bars float just clear of the flat bar. */
+@media (max-width: 47.99rem) {
+  html {
+    --chrome-tabbar: 0px;
+    --chrome-bar: 0px;
+    scroll-padding-bottom: calc(var(--chrome-tabbar) + var(--chrome-bar) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
+
+  html:has(nav[aria-label="Quick navigation"]) {
+    --chrome-tabbar: 5.4rem;
+  }
+
+  html:has(nav[aria-label="Quick navigation"][data-report-fab="off"]) {
+    --chrome-tabbar: 3.6rem;
+  }
+
+  html:has(:is(.app-dock, .app-wizard-bar, .app-sticky-actions)) {
+    --chrome-bar: 4.75rem;
+  }
+
+  body:has(nav[aria-label="Quick navigation"][data-report-fab="off"]) {
+    --app-dock-clearance: 4.3rem;
+  }
+
+  /* Typing (text-entry fields only: pickers such as select or date open no keyboard), on a page without a
+     wizard / form bar: the tab bar and the dock are away, and so is their padding. */
+  html:has(:is(input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="tel"], [type="url"], [type="password"], [type="number"]), textarea, [contenteditable=""], [contenteditable="true"]):focus):not(:has(.app-wizard-bar, .app-sticky-actions)) {
+    --chrome-tabbar: 0px;
+    --chrome-bar: 0px;
+  }
+
+  nav[aria-label="Quick navigation"],
+  .app-dock {
+    transition:
+      transform var(--dur-base) var(--ease-standard),
+      visibility 0s linear 0s;
+  }
+
+  body:has(:is(input:is(:not([type]), [type="text"], [type="search"], [type="email"], [type="tel"], [type="url"], [type="password"], [type="number"]), textarea, [contenteditable=""], [contenteditable="true"]):focus):not(:has(.app-wizard-bar, .app-sticky-actions)) :is(nav[aria-label="Quick navigation"], .app-dock) {
+    transform: translateY(calc(100% + 1.5rem));
+    visibility: hidden;
+    transition:
+      transform var(--dur-base) var(--ease-exit),
+      visibility 0s linear var(--dur-base);
+  }
+
+  :is(nav[aria-label="Quick navigation"], .app-dock, .app-wizard-bar, .app-sticky-actions) :is(a, button, input, select, textarea, [tabindex]) {
+    scroll-margin-bottom: calc(-1 * (var(--chrome-tabbar) + var(--chrome-bar) + 1rem));
+  }
+}
+
+/* --- 3. Safe-area gutters --------------------------------------------------------------
+   index.html sets viewport-fit=cover, so on a notched phone in landscape the page runs under the sensor housing
+   and the rounded corners. `safe-px` pads content (never backgrounds) by the larger of the gutter and the
+   inset: `safe-px [--safe-gutter:1rem] sm:[--safe-gutter:1.5rem]` (header, top bar, footer, page area). */
+@utility safe-px {
+  padding-left: max(var(--safe-gutter, 1rem), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--safe-gutter, 1rem), env(safe-area-inset-right, 0px));
+}
+
+/* --- 4. Route focus target ---------------------------------------------------------------
+   After a page change RouteAnnouncer focuses the new page's heading (tabindex -1, not a tab stop): a reading
+   position for keyboard and screen-reader users, not a control, so it shows no ring. */
+@layer base {
+  [data-route-focus]:focus {
+    outline: none;
+    box-shadow: none;
+    animation: none;
+  }
+}

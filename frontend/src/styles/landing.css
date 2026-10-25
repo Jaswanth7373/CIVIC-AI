@@ -1,0 +1,913 @@
+/* ==========================================================================
+   Landing page (pages/public/LandingPage.jsx, components/landing/*)
+
+   Plain CSS for what utility classes cannot express cleanly:
+   1. Hero scrims over the 3D city (theme-aware, AA contrast for the copy)
+   2. The gantry that carries the CivicAI sign (steel truss, hangers, sign lights) and the cued opening
+   3. Act grounds (LandingSection): the lane junction between sections of one act, the night band and its board
+   4. Story HUD lane rail
+   5. Highlighter marks (sentiment key phrases) and the detection scan band
+   6. Lanes flowing into the fusion (multimodal) and routing arc packets
+   7. Closing band: a road receding in CSS 3D, lane dashes flowing toward the viewer
+   8. Landscape phones (short landscape): hero and story layouts for a short window
+   9. Reduced motion and forced colours
+
+   Colours come from the design tokens (index.css) with literal fallbacks, so the
+   file does not depend on Tailwind emitting a given theme variable.
+   ========================================================================== */
+
+/* --- 1. Hero scrims -------------------------------------------------------- */
+
+.landing-hero {
+  /* Header-high top offset is part of the hero (the header overlays it). */
+  --hero-band: calc(var(--public-header-h, 4rem) + min(44svh, 28rem));
+  /* Phones and tablets: the sign hangs across the band's lower edge. */
+  --hero-copy-top: calc(var(--hero-band) - 4.5rem);
+}
+
+/* The copy's own scrim (large screens and landscape phones, where the text sits on the scene): a frosted pane shaped
+   to the text block under the sign - subtitle, calls to action, live figures - and nothing more, so the city stays
+   crisp and in full colour edge to edge around the copy (no haze over the left of the frame). It blurs the scene
+   behind the text (detail, not light, is what fights small type) and tints it a little toward the page: white
+   frost by day, asphalt shade by night. Full strength over the text and --pad beyond it, then a short smoothstep
+   feather (two 1-D ramps intersected: a rectangle with soft, rounded corners). It paints under the sign and the
+   gantry (z-index -1 in the copy column's own stacking context). The subtitle sits in full ink over it. (Measured
+   on the live scene at 1024-1920 px: the 1st-percentile pixel behind the subtitle and the figures is >= 4.5:1 in
+   both themes; see the fix-public QA notes.) */
+.hero-copy-scrim {
+  display: none;
+}
+
+@media (min-width: 64rem), (orientation: landscape) and (max-height: 32rem) {
+  .hero-copy-scrim {
+    --pad: 0.875rem;
+    --fl: 2.25rem;
+    --fr: 3rem;
+    --ft: 1.75rem;
+    --fb: 2.25rem;
+    --frost: color-mix(in srgb, var(--c-surface) 74%, transparent);
+    --ramp-x: linear-gradient(
+      90deg,
+      transparent 0,
+      rgb(0 0 0 / 0.16) calc(var(--fl) * 0.25),
+      rgb(0 0 0 / 0.5) calc(var(--fl) * 0.5),
+      rgb(0 0 0 / 0.84) calc(var(--fl) * 0.75),
+      #000 var(--fl),
+      #000 calc(100% - var(--fr)),
+      rgb(0 0 0 / 0.84) calc(100% - var(--fr) * 0.75),
+      rgb(0 0 0 / 0.5) calc(100% - var(--fr) * 0.5),
+      rgb(0 0 0 / 0.16) calc(100% - var(--fr) * 0.25),
+      transparent 100%
+    );
+    --ramp-y: linear-gradient(
+      180deg,
+      transparent 0,
+      rgb(0 0 0 / 0.16) calc(var(--ft) * 0.25),
+      rgb(0 0 0 / 0.5) calc(var(--ft) * 0.5),
+      rgb(0 0 0 / 0.84) calc(var(--ft) * 0.75),
+      #000 var(--ft),
+      #000 calc(100% - var(--fb)),
+      rgb(0 0 0 / 0.84) calc(100% - var(--fb) * 0.75),
+      rgb(0 0 0 / 0.5) calc(100% - var(--fb) * 0.5),
+      rgb(0 0 0 / 0.16) calc(100% - var(--fb) * 0.25),
+      transparent 100%
+    );
+    display: block;
+    position: absolute;
+    z-index: -1;
+    top: calc(-1 * (var(--pad) + var(--ft)));
+    right: calc(-1 * (var(--pad) + var(--fr)));
+    bottom: calc(-1 * (var(--pad) + var(--fb)));
+    left: calc(-1 * (var(--pad) + var(--fl)));
+    pointer-events: none;
+    background: var(--frost);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-mask-image: var(--ramp-x), var(--ramp-y);
+    -webkit-mask-composite: source-in;
+    mask-image: var(--ramp-x), var(--ramp-y);
+    mask-composite: intersect;
+  }
+
+  .dark .hero-copy-scrim {
+    --frost: color-mix(in srgb, var(--c-bg) 80%, transparent);
+  }
+}
+
+/* Top of the frame: keeps the glass header calm over bright arcs and beacons. Night only: by day the glass header
+   reads on its own, and a pale strip would sit over the sky like a veil. Under the header itself it is nearly
+   opaque, so an arc (or, on very short windows, a department sign) passing beneath reads as a faint glow, not a
+   blurred shape behind the navigation. */
+.hero-scrim-top {
+  background: none;
+}
+
+.dark .hero-scrim-top {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--c-bg) 84%, transparent) 0%,
+    color-mix(in srgb, var(--c-bg) 72%, transparent) var(--public-header-h, 4rem),
+    color-mix(in srgb, var(--c-bg) 0%, transparent) 100%
+  );
+}
+
+/* Bottom of the frame: the city dissolves into the next band of the page. */
+.hero-scrim-bottom {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--hero-next, var(--c-surface)) 0%, transparent) 0%,
+    color-mix(in srgb, var(--hero-next, var(--c-surface)) 72%, transparent) 62%,
+    var(--hero-next, var(--c-surface)) 100%
+  );
+}
+
+/* Phones: the scene is a band; its lower edge fades into the page colour under the sign. */
+.hero-scrim-band {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--c-bg) 0%, transparent) 0%,
+    color-mix(in srgb, var(--c-bg) 0%, transparent) 52%,
+    color-mix(in srgb, var(--c-bg) 78%, transparent) 84%,
+    var(--c-bg) 100%
+  );
+}
+
+/* --- 2. Gantry ---------------------------------------------------------------
+   The sign hangs from a steel gantry. Phones and tablets: a sign bridge that
+   crosses the whole scene band (its posts stand outside the frame). Large
+   screens: a cantilever - the post stands right of the copy, at the edge of the
+   city, descending into the haze at the bottom of the hero (--gantry-drop is
+   measured by HeroSection); its braced truss arm reaches left over the copy to an
+   end plate just past the sign. Light: galvanised steel at dawn. Dark: a
+   silhouette, and two sign lamps that light the sign face once it has swung
+   into place. The arm sits at the top of .gantry's padding; the hangers hang
+   from its lower chord to the sign. */
+
+.gantry {
+  --steel: #5c6a68;
+  --steel-hi: #8c9a96;
+  --steel-lo: #45514f;
+  --truss-h: 0.8125rem;
+  --hang: 1.125rem;
+  --post-w: 0.875rem;
+  --post-gap: 1.5rem;
+  position: relative;
+}
+
+.dark .gantry {
+  --steel: #2c3637;
+  --steel-hi: #4d5b5a;
+  --steel-lo: #1c2425;
+}
+
+.gantry-beam {
+  position: absolute;
+  left: -100vw;
+  right: -2.25rem;
+  top: 0;
+  height: var(--truss-h);
+  /* Slides in across the road from the left edge of the window. */
+  transform-origin: 0% 50%;
+  background:
+    linear-gradient(var(--steel-hi), var(--steel-hi)) top / 100% 2px no-repeat,
+    linear-gradient(var(--steel), var(--steel)) bottom / 100% 2px no-repeat,
+    repeating-linear-gradient(58deg, transparent 0 8px, var(--steel) 8px 9.5px, transparent 9.5px 15px),
+    repeating-linear-gradient(-58deg, transparent 0 8px, var(--steel) 8px 9.5px, transparent 9.5px 15px);
+  filter: drop-shadow(0 6px 10px rgb(15 22 23 / 0.18));
+}
+
+/* End plate where the beam stops past the sign. */
+.gantry-beam::after {
+  content: "";
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  bottom: -3px;
+  width: 6px;
+  border-radius: 1px;
+  background: var(--steel-hi);
+}
+
+/* The cantilever's post (large screens only). */
+.gantry-post {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .gantry {
+    --truss-h: 1rem;
+  }
+
+  /* The arm: from its end plate just past the sign to the post's centre line. */
+  .gantry-beam {
+    left: -1.25rem;
+    right: calc(-1 * var(--post-gap));
+    transform-origin: 100% 50%;
+    background:
+      linear-gradient(var(--steel-hi), var(--steel-hi)) top / 100% 1px no-repeat,
+      linear-gradient(var(--steel), var(--steel)) 0 1px / 100% 2px no-repeat,
+      linear-gradient(var(--steel-lo), var(--steel-lo)) bottom / 100% 3px no-repeat,
+      repeating-linear-gradient(90deg, transparent 0 22px, var(--steel) 22px 24px),
+      repeating-linear-gradient(58deg, transparent 0 9px, var(--steel) 9px 10.5px, transparent 10.5px 17px),
+      repeating-linear-gradient(-58deg, transparent 0 9px, var(--steel) 9px 10.5px, transparent 10.5px 17px);
+  }
+
+  .gantry-beam::after {
+    right: auto;
+    left: -3px;
+  }
+
+  /* Knee brace from the post up to the underside of the arm (on the arm: the post's fade mask would clip it). */
+  .gantry-beam::before {
+    content: "";
+    position: absolute;
+    top: 100%;
+    right: calc(var(--post-w) / 2);
+    width: 2.75rem;
+    height: 2.75rem;
+    background: linear-gradient(to top right, transparent calc(50% - 1.5px), var(--steel) calc(50% - 1.5px) calc(50% + 1.5px), transparent calc(50% + 1.5px));
+  }
+
+  .gantry-post {
+    display: block;
+    position: absolute;
+    top: -0.375rem;
+    left: calc(100% + var(--post-gap) - var(--post-w) / 2);
+    width: var(--post-w);
+    height: calc(var(--gantry-drop, 0px) + 0.375rem);
+    /* A box column lit from the left; it dissolves into the haze where the city fades into the page. */
+    background: linear-gradient(90deg, var(--steel-hi) 0 2px, var(--steel) 2px calc(100% - 3px), var(--steel-lo) calc(100% - 3px));
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 15rem), transparent calc(100% - 3rem));
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 15rem), transparent calc(100% - 3rem));
+    transform-origin: 50% 100%;
+  }
+
+  /* Cap plate on top of the post. */
+  .gantry-post::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    height: 4px;
+    border-radius: 1px;
+    background: var(--steel-hi);
+  }
+}
+
+/* Hangers: they belong to the sign and swing with it (the hinge is at the beam). */
+.gantry-sign {
+  transform-origin: 50% calc(-1 * var(--hang));
+}
+
+.gantry-sign::before,
+.gantry-sign::after {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--hang));
+  width: 6px;
+  height: var(--hang);
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--steel-hi), var(--steel));
+}
+
+.gantry-sign::before {
+  left: 18%;
+}
+
+.gantry-sign::after {
+  right: 18%;
+}
+
+/* Entrance: compositor-driven CSS keyframes (transform + opacity only), so the moment stays smooth while the main
+   thread is busy loading the page and warming up the 3D scene. `backwards` fill: before its delay an element
+   holds the first keyframe; after the end it has no transform at all (crisp text, no lingering layer). */
+.gantry-beam {
+  animation: landing-gantry-in 0.7s var(--ease-enter, cubic-bezier(0.16, 1, 0.3, 1)) 0.05s backwards;
+}
+
+@keyframes landing-gantry-in {
+  from {
+    transform: scaleX(0);
+    opacity: 0.6;
+  }
+}
+
+/* Large screens: built in order - the post rises out of the haze, the arm reaches out from it over the copy, then
+   the sign swings down (below). */
+@media (min-width: 64rem) {
+  .gantry-post {
+    animation: landing-post-rise 0.7s var(--ease-enter, cubic-bezier(0.16, 1, 0.3, 1)) 0s backwards;
+  }
+
+  .gantry-beam {
+    animation-duration: 0.62s;
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes landing-post-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* A heavy sign settling on its hangers: it drops from edge-on, swings past level and back, and comes to rest.
+   Each segment eases like a pendulum (slow at the extremes, fastest through level). */
+.gantry-sign {
+  animation: landing-gantry-swing 1.55s linear 0.45s backwards;
+}
+
+@media (min-width: 64rem) {
+  .gantry-sign {
+    animation-delay: 0.62s;
+  }
+}
+
+@keyframes landing-gantry-swing {
+  0% {
+    transform: perspective(900px) rotateX(-84deg);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0.6);
+  }
+  9% {
+    opacity: 1;
+  }
+  30% {
+    transform: perspective(900px) rotateX(11deg);
+    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+  52% {
+    transform: perspective(900px) rotateX(-5deg);
+    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+  71% {
+    transform: perspective(900px) rotateX(2.2deg);
+    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+  86% {
+    transform: perspective(900px) rotateX(-0.7deg);
+    animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+  }
+  100% {
+    transform: perspective(900px) rotateX(0deg);
+  }
+}
+
+/* The copy, the calls to action, the live figures and the dispatch card follow the sign. */
+.hero-rise {
+  animation: landing-rise 0.75s var(--ease-enter, cubic-bezier(0.16, 1, 0.3, 1)) var(--rise-delay, 0s) backwards;
+}
+
+.hero-rise-card {
+  animation-name: landing-rise-card;
+  animation-duration: 0.95s;
+}
+
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+/* The subtitle (the page's largest text, its LCP element) is never hidden: it is painted in the first frame and
+   only glides up into place - a transform, no fade - and it is not held for the cue. */
+.hero-rise-text {
+  animation-name: landing-rise-text;
+  animation-duration: 0.9s;
+}
+
+@keyframes landing-rise-text {
+  from {
+    transform: translateY(14px);
+  }
+}
+
+@keyframes landing-rise-card {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.985);
+  }
+}
+
+/* The opening (HeroSection): on the first visit of a session the entrance waits, held at its first keyframe, for
+   the establishing shot's first frame - but never more than about 0.35 s - so the sign swings in as the camera
+   starts its flight. All the delays above count from then. The subtitle is never held (see .hero-rise-text). */
+.landing-hero[data-opening="waiting"] :is(.gantry-beam, .gantry-post, .gantry-sign, .hero-rise:not(.hero-rise-text)) {
+  animation-play-state: paused;
+}
+
+/* The composed still replacing the opening sky when the 3D is late: a short fade, never a cut. */
+.hero-still-in {
+  animation: landing-still-in 0.7s var(--ease-standard, ease) both;
+}
+
+@keyframes landing-still-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Sign lamps (dark theme): two warm pools on the upper face of the sign. */
+.gantry-lamps {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  background:
+    radial-gradient(60% 46% at 24% 0%, rgb(255 214 140 / 0.2), transparent 70%),
+    radial-gradient(60% 46% at 76% 0%, rgb(255 214 140 / 0.2), transparent 70%);
+  mix-blend-mode: screen;
+}
+
+.dark .gantry-lamps[data-lit] {
+  opacity: 1;
+  transition: opacity 900ms var(--ease-standard, ease);
+}
+
+/* --- 3. Act grounds ----------------------------------------------------------
+   The sections of one act share one ground; between them, instead of a hairline and a change of band, a dashed lane
+   marking (recessive, its first dash in road-marking yellow) - the road goes on. */
+.landing-junction {
+  height: 3px;
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, var(--color-marking-500, #f5b700) 0 28px, transparent 28px),
+    repeating-linear-gradient(90deg, var(--c-line-strong) 0 28px, transparent 28px 52px);
+}
+
+/* Everything below the story (act bands, feature sections, closing band) is rendered only when it nears the
+   window: the browser skips the layout, paint and raster of the bands far below, which keeps the GPU free for
+   the 3D while the page scrolls. `auto` remembers each band's real height once it has been drawn, so the
+   scrollbar and in-page links settle after the first pass. */
+.landing-defer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1000px;
+}
+
+.act-band.landing-defer {
+  contain-intrinsic-size: auto 460px;
+}
+
+/* The night band (tone="night"): the act's full-bleed moment. Asphalt in both themes with a cool glow from the
+   upper right and a faint sodium wash from the lower left; a lane line runs along its top edge (the act band that
+   follows it carries one at its foot). Its contents use the dark tokens (the section carries the `dark` class). */
+.landing-night {
+  isolation: isolate;
+  background:
+    radial-gradient(55% 70% at 92% 0%, rgb(30 52 54 / 0.65), transparent 72%),
+    radial-gradient(45% 60% at 0% 100%, rgb(255 186 104 / 0.09), transparent 72%),
+    linear-gradient(180deg, #0b1213 0%, #0f1819 100%);
+}
+
+.landing-night::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  height: 3px;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(90deg, var(--color-marking-500, #f5b700) 0 30px, transparent 30px 56px);
+  opacity: 0.7;
+  top: 2.25rem;
+}
+
+/* The board on the night band: a slightly lifted panel of asphalt with a lit top edge. */
+.landing-board {
+  background: linear-gradient(180deg, rgb(28 38 40 / 0.92), rgb(21 30 32 / 0.92));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 30px 60px -30px rgb(0 0 0 / 0.8);
+}
+
+/* Category chart (CategoryVolumeChart): dashed grid lines, recessive; the 5px period divides the 40px row, so
+   the dashes run on unbroken from row to row. */
+.cv-grid {
+  background-image: repeating-linear-gradient(to bottom, var(--c-line-strong) 0 2px, transparent 2px 5px);
+  opacity: 0.8;
+}
+
+/* Analytics figures (AnalyticsSection BigFigure): display-scale values, a lane-marking dash between the figures of
+   one row (two per row on phones and tablets, four on large screens). */
+.analytics-value {
+  font-size: clamp(2.25rem, 1.2rem + 3.6vw, 4.5rem);
+}
+
+.analytics-figure::before {
+  content: '';
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: calc(-0.75rem - 1.5px);
+  width: 3px;
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(to bottom, var(--color-marking-500, #f5b700) 0 10px, transparent 10px 18px);
+  opacity: 0.8;
+}
+
+.analytics-figure:nth-child(odd)::before {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .analytics-figure::before,
+  .analytics-figure:nth-child(odd)::before {
+    display: block;
+    left: calc(-1.25rem - 1.5px);
+  }
+
+  .analytics-figure:first-child::before {
+    display: none;
+  }
+}
+
+/* --- 4. Story HUD lane rail --------------------------------------------------- */
+
+.story-rail-track {
+  background-image: repeating-linear-gradient(to right, rgb(255 255 255 / 0.28) 0 12px, transparent 12px 20px);
+}
+
+.story-rail-fill {
+  background-image: repeating-linear-gradient(to right, var(--color-marking-400, #fbc41a) 0 12px, transparent 12px 20px);
+  transform-origin: 0 50%;
+}
+
+/* --- 5. Highlighter marks and the detection scan ------------------------------ */
+
+/* Key phrases the sentiment model picked up, marked like a highlighter pass. */
+.phrase-mark {
+  --mark: rgb(245 183 0 / 0.36);
+  /* <mark> has a UA yellow background; the highlighter pass is the gradient below. */
+  background-color: transparent;
+  background-image: linear-gradient(var(--mark), var(--mark));
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  background-size: 0% 46%;
+  color: inherit;
+  padding-inline: 0.06em;
+  border-radius: 2px;
+  transition: background-size 620ms var(--ease-enter, ease-out);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.phrase-mark[data-tone="positive"] {
+  --mark: rgb(53 161 123 / 0.3);
+}
+
+.phrase-mark[data-tone="negative"] {
+  --mark: rgb(211 52 31 / 0.24);
+}
+
+.dark .phrase-mark[data-tone="positive"] {
+  --mark: rgb(53 161 123 / 0.36);
+}
+
+.dark .phrase-mark[data-tone="negative"] {
+  --mark: rgb(239 123 102 / 0.3);
+}
+
+.phrase-mark[data-on] {
+  background-size: 100% 46%;
+}
+
+/* The AI scan band crossing the category list once (AI Issue Detection). */
+/* Sits at the bottom edge of a full-height layer that slides from -100% to 0%, so the line crosses the list. */
+.detect-scan {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 5rem;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgb(245 183 0 / 0) 0%,
+    rgb(245 183 0 / 0.07) 55%,
+    rgb(245 183 0 / 0.16) 92%,
+    rgb(245 183 0 / 0) 100%
+  );
+}
+
+.detect-scan::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0.5rem;
+  height: 2px;
+  background: var(--color-marking-500, #f5b700);
+  box-shadow: 0 0 12px 1px rgb(245 183 0 / 0.55);
+}
+
+/* --- 6. Lanes into the fusion, routing packets --------------------------------- */
+
+.lane-flow {
+  stroke-dasharray: 7 6;
+  animation: landing-lane-flow 0.9s linear infinite;
+}
+
+@keyframes landing-lane-flow {
+  to {
+    stroke-dashoffset: -13;
+  }
+}
+
+.lane-flow[data-paused] {
+  animation-play-state: paused;
+}
+
+/* --- 7. Closing band: the road ahead ------------------------------------------
+   A road drawn as a floor in CSS 3D: one plane pivots 90deg back about its bottom
+   edge (which stays at the bottom of the band), so with perspective it recedes to a
+   vanishing point on the horizon. Every plane point lies behind the screen plane, so
+   nothing crosses the camera. The markings ride one layer that slides a whole
+   pattern period toward the viewer and loops (a composited transform, no repaint). */
+
+.closing-band {
+  --vp-x: 66%;
+  --vp-y: 34%;
+  --road-w: 72rem;
+  --road-period: 288px;
+  background: linear-gradient(180deg, #091011 0%, #0c1516 46%, #111b1c 100%);
+}
+
+.closing-sky {
+  background:
+    radial-gradient(34% 22% at var(--vp-x) var(--vp-y), rgb(255 186 104 / 0.3), transparent 72%),
+    radial-gradient(70% 34% at var(--vp-x) calc(var(--vp-y) + 2%), rgb(255 160 80 / 0.1), transparent 70%),
+    linear-gradient(180deg, rgb(30 52 54 / 0.5) 0%, transparent var(--vp-y));
+}
+
+/* A faint city line on the horizon. */
+.closing-horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--vp-y) - 1px);
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgb(255 196 120 / 0.35) calc(var(--vp-x) - 18%), rgb(255 214 150 / 0.6) var(--vp-x), rgb(255 196 120 / 0.35) calc(var(--vp-x) + 18%), transparent 100%);
+  filter: blur(0.5px);
+}
+
+.closing-road {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  perspective: 520px;
+  perspective-origin: var(--vp-x) var(--vp-y);
+  pointer-events: none;
+}
+
+.closing-road-plane {
+  position: absolute;
+  left: var(--vp-x);
+  bottom: 0;
+  width: var(--road-w);
+  height: 5200px;
+  margin-left: calc(var(--road-w) / -2);
+  transform-origin: 50% 100%;
+  transform: rotateX(90deg);
+  overflow: hidden;
+  background:
+    /* headlight pool on the near asphalt */
+    radial-gradient(46% 7% at 50% 100%, rgb(255 222 168 / 0.14), transparent 75%),
+    /* solid white edge lines */
+    linear-gradient(90deg, transparent 0 5%, rgb(236 240 238 / 0.75) 5% 6%, transparent 6% 94%, rgb(236 240 238 / 0.75) 94% 95%, transparent 95%),
+    /* wet sheen down the crown of the road */
+    linear-gradient(90deg, transparent 20%, rgb(150 162 160 / 0.07) 50%, transparent 80%),
+    linear-gradient(90deg, #121b1c 0%, #1b2526 4%, #222c2d 50%, #1b2526 96%, #121b1c 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 34%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 34%);
+}
+
+.closing-road-markings {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(-1 * var(--road-period));
+  bottom: 0;
+  background:
+    /* yellow centre dashes */
+    repeating-linear-gradient(180deg, var(--color-marking-500, #f5b700) 0 44px, transparent 44px 96px) 50% 0 / 1.6% 100% no-repeat,
+    /* white lane dividers */
+    repeating-linear-gradient(180deg, rgb(236 240 238 / 0.42) 0 34px, transparent 34px 96px) 28% 0 / 0.9% 100% no-repeat,
+    repeating-linear-gradient(180deg, rgb(236 240 238 / 0.42) 0 34px, transparent 34px 96px) 72% 0 / 0.9% 100% no-repeat,
+    /* amber reflectors along both edges */
+    repeating-linear-gradient(180deg, rgb(255 190 110 / 0.9) 0 9px, transparent 9px 144px) 2.5% 0 / 1.2% 100% no-repeat,
+    repeating-linear-gradient(180deg, rgb(255 190 110 / 0.9) 0 9px, transparent 9px 144px) 97.5% 0 / 1.2% 100% no-repeat;
+  will-change: transform;
+  animation: landing-road-flow 2.7s linear infinite;
+}
+
+@keyframes landing-road-flow {
+  to {
+    transform: translateY(var(--road-period));
+  }
+}
+
+.closing-band[data-paused] .closing-road-markings {
+  animation-play-state: paused;
+}
+
+/* Copy side of the band: a scrim keeps the text AA over the road and the glow. */
+.closing-scrim {
+  background: linear-gradient(90deg, rgb(9 16 17 / 0.94) 0%, rgb(9 16 17 / 0.84) 32%, rgb(9 16 17 / 0.3) 56%, rgb(9 16 17 / 0) 72%);
+}
+
+@media (max-width: 1023.98px) {
+  .closing-band {
+    --vp-x: 50%;
+    --vp-y: 58%;
+    --road-w: 46rem;
+  }
+
+  .closing-scrim {
+    background: linear-gradient(180deg, rgb(9 16 17 / 0.92) 0%, rgb(9 16 17 / 0.82) 48%, rgb(9 16 17 / 0.2) 70%, rgb(9 16 17 / 0) 84%);
+  }
+}
+
+/* --- 7b. Act bands: the junctions between the three acts (ActBand) ------------------
+   Night in both themes, like the closing band. A sodium glow rises behind the outlined act numeral; a lane line
+   crosses the band near its foot. */
+.act-band {
+  background:
+    radial-gradient(42% 120% at 10% 100%, rgb(255 186 104 / 0.12), transparent 72%),
+    radial-gradient(60% 90% at 100% 0%, rgb(30 52 54 / 0.55), transparent 70%),
+    linear-gradient(180deg, #0a1112 0%, #0f1819 100%);
+}
+
+/* Filled with road-marking yellow that fades toward its foot (a stroke would trace the glyphs' overlapping
+   contours; a clipped fill unions them). */
+.act-numeral {
+  font-size: clamp(5.5rem, 3.4rem + 8.5vw, 12rem);
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+  padding-bottom: 0.04em;
+  color: transparent;
+  background: linear-gradient(180deg, rgb(251 196 26 / 0.95) 0%, rgb(245 183 0 / 0.55) 55%, rgb(245 183 0 / 0.12) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+@media (forced-colors: active) {
+  .act-numeral {
+    background: none;
+    color: CanvasText;
+  }
+}
+
+/* The act's sections as small direction signs (green field, inset white border, like the gantry sign). */
+.act-sign {
+  background-color: var(--color-sign-600, #0b6e4f);
+  box-shadow:
+    inset 0 0 0 2px var(--color-sign-600, #0b6e4f),
+    inset 0 0 0 3px rgb(255 255 255 / 0.85),
+    0 8px 18px -10px rgb(0 0 0 / 0.7);
+}
+
+.act-sign:hover {
+  background-color: var(--color-sign-500, #148a63);
+}
+
+.act-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2.5rem;
+  height: 3px;
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(90deg, var(--color-marking-500, #f5b700) 0 30px, transparent 30px 56px);
+  opacity: 0.75;
+  transform-origin: 0 50%;
+}
+
+/* --- 8. Landscape phones (short landscape) ---------------------------------------
+   Height is the scarce dimension (e.g. 844x390, 932x430, 740x360), so the portrait composition - a scene band,
+   then the sign, then the copy - would push the subtitle and the calls to action below the fold.
+   - Hero: the scene fills the first screen behind the copy; the sign, scaled to the window height, hangs on the
+     left and the subtitle and calls to action stand beside it (with their own scrim), all on the first screen.
+   - Story: the large-screen layout - the scene pinned beside the chapters at the window's height - instead of a
+     thin band over a short reading window (HowSection reads the same query for its reading line). */
+@media (orientation: landscape) and (max-height: 32rem) and (max-width: 63.98rem) {
+  .landing-hero {
+    --hero-band: 100svh;
+    --hero-copy-top: calc(var(--public-header-h, 4rem) + 0.75rem);
+  }
+
+  .hero-copy {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: clamp(1.25rem, 3.5vw, 2.25rem);
+    align-items: start;
+  }
+
+  .hero-copy .gantry-sign {
+    padding: 0.875rem 1.125rem 1rem;
+  }
+
+  .hero-copy .gantry-title {
+    font-size: clamp(2rem, 9.5svh, 2.75rem);
+  }
+
+  .hero-copy .gantry-tagline {
+    margin-top: 0.375rem;
+    font-size: clamp(0.875rem, 3.9svh, 1rem);
+  }
+
+  .hero-copy .gantry-rule {
+    margin-top: 0.625rem;
+    height: 0.3125rem;
+    width: 2.75rem;
+  }
+
+  /* Beside the sign, top-aligned with its face (the gantry's arm and hangers sit above it). */
+  .hero-text {
+    margin-top: 0;
+    padding-top: 1.75rem;
+  }
+
+  .hero-text .lead-fluid {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .hero-ctas {
+    margin-top: 1rem;
+  }
+
+  .hero-copy-scrim {
+    --pad: 0.75rem;
+    --fl: 2.5rem;
+    --fr: 2rem;
+    --ft: 1.5rem;
+    --fb: 3rem;
+  }
+
+  /* The scene now fills the first screen: fade only its last strip into the page, where the work order follows,
+     so the city reads beside and under the sign. */
+  .hero-scrim-band {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--c-bg) 0%, transparent) 0%,
+      color-mix(in srgb, var(--c-bg) 0%, transparent) 80%,
+      color-mix(in srgb, var(--c-bg) 62%, transparent) 93%,
+      var(--c-bg) 100%
+    );
+  }
+
+  .story-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 42%);
+    column-gap: 1.25rem;
+    align-items: start;
+  }
+
+  .story-panel {
+    grid-column: 2;
+    grid-row: 1;
+    top: calc(var(--public-header-h, 4rem) + 0.75rem);
+    height: calc(100svh - var(--public-header-h, 4rem) - 1.5rem);
+    margin-inline: 0;
+    border-bottom-width: 0;
+    border-radius: 0.875rem;
+    overflow: hidden;
+    box-shadow: none;
+  }
+
+  /* Hold the pinned scene until the last chapter has been read (as on large screens). */
+  .story-chapters {
+    grid-column: 1;
+    grid-row: 1;
+    padding-bottom: 62svh;
+  }
+}
+
+/* --- 9. Reduced motion and forced colours -------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .gantry-beam,
+  .gantry-post,
+  .gantry-sign,
+  .hero-rise,
+  .hero-still-in,
+  .lane-flow,
+  .closing-road-markings {
+    animation: none;
+  }
+
+  .phrase-mark {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .gantry-beam,
+  .gantry-post,
+  .gantry-lamps,
+  .hero-copy-scrim,
+  .closing-road,
+  .landing-night::before {
+    display: none;
+  }
+}

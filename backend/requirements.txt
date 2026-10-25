@@ -1,0 +1,43 @@
+# CivicAI backend - core requirements (enough to run the full platform in MODEL_MODE=demo)
+# Install:  pip install -r requirements.txt
+# For MODEL_MODE=production also install:  pip install -r requirements-ml.txt
+
+# --- Web framework / API ---
+Django>=5.2,<6.0
+djangorestframework>=3.16,<4.0
+djangorestframework-simplejwt>=5.5,<6.0
+django-cors-headers>=4.7,<5.0
+django-filter>=25.1
+
+# --- Database ---
+# mysqlclient (fast C driver) has prebuilt wheels on Windows; on Linux it must be compiled against the MySQL
+# client headers, so cloud builds use the pure-Python PyMySQL driver instead (config/settings.py picks
+# whichever is installed). Install mysqlclient manually on Linux/macOS if you have the headers.
+mysqlclient>=2.2.7 ; sys_platform == "win32"
+PyMySQL>=1.1
+dj-database-url>=2.3
+
+# --- Config / utilities ---
+python-dotenv>=1.0
+requests>=2.32
+Pillow>=11.0
+
+# --- Data science / classical ML / computer vision ---
+numpy>=2.0
+pandas>=2.2
+scipy>=1.13
+scikit-learn>=1.5
+joblib>=1.4
+opencv-python-headless>=4.10
+ImageHash>=4.3
+
+# --- Reports ---
+reportlab>=4.2
+
+# --- Background jobs (optional: USE_CELERY=True) ---
+celery>=5.4
+redis>=5.0
+
+# --- Production serving ---
+whitenoise>=6.7
+gunicorn>=23.0 ; sys_platform != "win32"

@@ -1,0 +1,13 @@
+/** Barrel for the hooks: `import { useAuth, useApi, useToast } from '@/hooks'`. */
+export { useApi } from './useApi'
+export { useAuth } from './useAuth'
+export { useConfig } from './useConfig'
+export { useConfirm } from './useConfirm'
+export { useDebounce } from './useDebounce'
+export { useDocumentTitle, formatDocumentTitle } from './useDocumentTitle'
+export { useGeolocation, geolocationError } from './useGeolocation'
+export { BREAKPOINTS, useMediaQuery } from './useMediaQuery'
+export { useNotifications } from './useNotifications'
+export { useScrollEdges } from './useScrollEdges'
+export { useTheme } from './useTheme'
+export { useToast } from './useToast'

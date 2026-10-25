@@ -1,0 +1,51 @@
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+*.sqlite3
+backend/media/*
+!backend/media/.gitkeep
+backend/staticfiles/
+
+# Raw photo downloads; the imported copies and their credits live in backend/sample_data/real_images
+/archive.zip
+/real_photos/
+backend/logs/*.log
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Trained / downloaded model artifacts (keep folder, ignore heavy weights)
+backend/ml_models/**/*.pt
+backend/ml_models/**/*.pth
+backend/ml_models/**/*.onnx
+backend/ml_models/**/*.joblib
+backend/ml_models/hf_cache/
+backend/ml_models/yolo/runs/
+backend/ml_models/datasets/
+
+# --- Secrets ---
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# --- Node / frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+node_modules/
+npm-debug.log*
+
+# --- Tooling / OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+test-results/
+playwright-report/

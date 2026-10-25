@@ -1,0 +1,21 @@
+/*
+ * Basemap grade for every CivicAI map (imported by leaflet.js, so it ships with the maps chunk).
+ *
+ * The OpenStreetMap raster style is drawn for wayfinding: pink and orange trunk roads, green parks and dense
+ * labels. On CivicAI's maps the DATA has to lead - hotspot badges and rings, category pins, the picked
+ * location - so the tiles are graded down to a quiet street plan with CSS filters only (no other tile
+ * server, no new assets):
+ * - light: mostly grey with a faint cool cast, a little lifted and lower in contrast;
+ * - dark: the same plan as night asphalt - inverted greyscale, pulled down to the app's dark surfaces and
+ *   tinted toward its teal-grey (sepia + hue-rotate turn the grey into that cast), instead of the muddy
+ *   olive that inverting the coloured tiles gave.
+ * Street names stay legible in both (labels keep their relative contrast). This file is the only tile grade:
+ * index.css no longer filters `.leaflet-tile-pane`.
+ */
+.leaflet-container .leaflet-tile-pane {
+  filter: grayscale(0.88) sepia(0.12) hue-rotate(130deg) saturate(0.9) contrast(0.9) brightness(1.04);
+}
+
+.dark .leaflet-container .leaflet-tile-pane {
+  filter: grayscale(1) invert(1) sepia(0.3) hue-rotate(135deg) saturate(0.55) brightness(0.7) contrast(1.12);
+}

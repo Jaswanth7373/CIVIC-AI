@@ -1,0 +1,3 @@
+# Deployment scripts run on Linux build hosts: keep LF line endings even when committed from Windows.
+*.sh text eol=lf
+Procfile text eol=lf

@@ -1,0 +1,4 @@
+# CivicAI end-to-end suite (see e2e/README.md). Python 3.10+.
+# After installing, download the browser once:  python -m playwright install chromium
+pytest>=8.2
+playwright>=1.47

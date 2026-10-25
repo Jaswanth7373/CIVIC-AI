@@ -1,0 +1,857 @@
+/* ==========================================================================
+   CivicAI app screens (citizen, officer, shared) - cinematic layer.
+   Plain CSS, imported by the components that use it. Colours are written out
+   as literal values from the design tokens in index.css (Tailwind only emits
+   the theme variables that utilities use, so palette variables are not
+   guaranteed to exist here); the semantic --c-* tokens are always present.
+
+   1. Dashboard hero scene - "the road ahead": dawn (light) / night (dark)
+   2. AI readouts (bars that grow to the model's value) and the AI scan
+      overlay of the report flow
+   3. Sticky action bars and the detail-page dock (phones)
+   4. Before / after wipe divider, detection-box lock-on
+   5. Reduced motion, forced colours
+
+   The timeline / stepper lane drawing and the officer cards' priority rail
+   are framer-motion and Tailwind in their components; nothing for them here.
+   ========================================================================== */
+
+/* --- 1. Dashboard hero scene --------------------------------------------------
+   The hero is a window onto the city at the edge of the page: a sky, a skyline
+   with lit windows and a department HQ beacon, and an avenue receding to the
+   horizon (a real CSS 3D ground plane, so the lane dashes foreshorten
+   correctly). Light theme = overcast dawn, dark theme = night. */
+.app-hero {
+  --hero-sky-top: #d5dfdb;
+  --hero-sky-mid: #e4ebe8;
+  --hero-sky-low: #eef2f0;
+  --hero-sun: rgb(250 196 70 / 0.26);
+  --hero-border: #d0d9d5;
+  --hero-skyline-far: #d3dcd8;
+  --hero-skyline: #b9c4c0;
+  --hero-window: #b1bcb8;
+  --hero-window-lit: #f2b52a;
+  --hero-window-lit-opacity: 0.6;
+  --hero-horizon-haze: rgb(246 249 248 / 0.72);
+  --hero-road: #56635f;
+  --hero-road-edge: rgb(255 255 255 / 0.85);
+  --hero-lane: rgb(255 255 255 / 0.7);
+  --hero-dash: #f5b700;
+  --hero-pool: rgb(255 214 120 / 0);
+  --hero-fog: #e9efec;
+  --hero-scan: rgb(245 183 0 / 0.32);
+  --hero-scan-core: rgb(255 226 122 / 0.95);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--hero-border);
+  background: linear-gradient(180deg, var(--hero-sky-top) 0%, var(--hero-sky-mid) 48%, var(--hero-sky-low) 100%);
+}
+
+.dark .app-hero {
+  --hero-sky-top: #060b0c;
+  --hero-sky-mid: #0a1213;
+  --hero-sky-low: #121b1b;
+  --hero-sun: rgb(255 160 40 / 0.2);
+  --hero-border: rgb(255 255 255 / 0.07);
+  --hero-skyline-far: #0b1415;
+  --hero-skyline: #040809;
+  --hero-window: #0e1718;
+  --hero-window-lit: #ffc15a;
+  --hero-window-lit-opacity: 0.92;
+  --hero-horizon-haze: rgb(255 166 62 / 0.22);
+  --hero-road: #161f21;
+  --hero-road-edge: rgb(255 255 255 / 0.36);
+  --hero-lane: rgb(255 255 255 / 0.22);
+  --hero-dash: #f5b700;
+  --hero-pool: rgb(255 184 84 / 0.24);
+  --hero-fog: #0d1516;
+  --hero-scan: rgb(255 204 64 / 0.26);
+  --hero-scan-core: rgb(255 232 150 / 0.95);
+}
+
+/* The art layer: right side of the hero on wide screens, a band across the top on phones.
+   The copy column ends at about 56% of the band (57% of the content box from sm, 48% from xl - DashboardHero),
+   and the art only becomes visible from 57.5%: it is half the band at most, and its mask stays fully
+   transparent over its first 15% before the city fades in. So no building, lit window or scan light ever
+   sits under the greeting, the summary or the officer's meta row; the copy reads on calm sky, the city stands
+   to its right. */
+.app-hero-art {
+  --horizon: 52%;
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset-block: 0;
+  right: 0;
+  width: min(50%, 46rem);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 15%, #000 45%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 15%, #000 45%);
+}
+
+.app-hero-skyline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% - var(--horizon));
+  width: 100%;
+  height: 46%;
+}
+
+.app-hero-skyline .far {
+  fill: var(--hero-skyline-far);
+}
+
+.app-hero-skyline .near {
+  fill: var(--hero-skyline);
+}
+
+.app-hero-skyline .win {
+  fill: var(--hero-window);
+}
+
+.app-hero-skyline .lit {
+  fill: var(--hero-window-lit);
+  opacity: var(--hero-window-lit-opacity);
+}
+
+/* Ground haze along the horizon: the city stands in mist (dawn) or in sodium glow (night). */
+.app-hero-art::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--horizon) - 1.75rem);
+  height: 2.5rem;
+  background: linear-gradient(180deg, transparent, var(--hero-horizon-haze) 72%, transparent);
+  z-index: 1;
+}
+
+/* The low sun (dawn) or the city's sodium glow (night), behind the skyline where the road vanishes. */
+.app-hero-art::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(42% 46% at 56% var(--horizon), var(--hero-sun), transparent 75%);
+}
+
+/* The HQ roof beacon (DashboardScene): HTML dots over the SVG antenna, so the endless pulse animates only
+   opacity and scale on the compositor - as SVG circles it cost a style + layout pass every frame. The wrapper
+   has the skyline's box; the dots use the SVG's xMidYMax-slice mapping with the scale
+   --s = max(width / 900, height / 150) (container units of the wrapper), and follow the near layer's
+   pointer parallax (translate -13 / -4 art units, like .app-hero-near). */
+.app-hero-beacons {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% - var(--horizon));
+  height: 46%;
+  container-type: size;
+  --s: max(100cqw / 900, 100cqh / 150);
+}
+
+.app-hero-beacon-layer {
+  position: absolute;
+  inset: 0;
+  transform: translate(calc(var(--px, 0) * -13 * var(--s)), calc(var(--py, 0) * -4 * var(--s)));
+  transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-hero-beacon,
+.app-hero-beacon-glow {
+  position: absolute;
+  left: calc(50% + var(--beacon-dx) * var(--s));
+  top: calc(100% - var(--beacon-dy) * var(--s));
+  translate: -50% -50%;
+  border-radius: 9999px;
+  background: var(--beacon);
+  will-change: opacity, scale;
+}
+
+.app-hero-beacon {
+  width: calc(6 * var(--s));
+  height: calc(6 * var(--s));
+  animation: app-beacon 2.8s ease-in-out infinite;
+}
+
+.app-hero-beacon-glow {
+  width: calc(18 * var(--s));
+  height: calc(18 * var(--s));
+  opacity: 0.5;
+  animation: app-beacon-glow 2.8s ease-in-out infinite;
+}
+
+@keyframes app-beacon {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  45%,
+  55% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes app-beacon-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.12;
+    scale: 0.7;
+  }
+}
+
+/* Pointer parallax (DashboardHero writes --px / --py, -0.5..0.5, for mouse users only): the far skyline moves
+   least, the near skyline more and the road most, so the scene reads as layers in depth. */
+.app-hero-far,
+.app-hero-near {
+  transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-hero-far {
+  transform: translate(calc(var(--px, 0) * -6px), calc(var(--py, 0) * -2px));
+}
+
+.app-hero-near {
+  transform: translate(calc(var(--px, 0) * -13px), calc(var(--py, 0) * -4px));
+}
+
+/* Road: a ground plane seen from eye height at the horizon. The container's top edge is the horizon and its
+   perspective origin the vanishing point; the plane lies flat (rotateX 90deg about its front edge). */
+.app-hero-road {
+  position: absolute;
+  top: var(--horizon);
+  bottom: 0;
+  left: 0;
+  right: -12%;
+  overflow: hidden;
+  perspective: 120px;
+  perspective-origin: 56% 0%;
+  transform: translateX(calc(var(--px, 0) * -22px));
+  transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-hero-road-plane {
+  position: absolute;
+  left: 56%;
+  bottom: 0;
+  width: 460px;
+  height: 2600px;
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  transform: rotateX(90deg);
+  overflow: hidden;
+  background-color: var(--hero-road);
+  box-shadow:
+    inset 9px 0 0 -3px var(--hero-road-edge),
+    inset -9px 0 0 -3px var(--hero-road-edge);
+}
+
+/* Sodium light pools along both kerbs (night only: the dawn pool colour is transparent). */
+.app-hero-road-plane::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(150px 90px at 0% 50%, var(--hero-pool), transparent 70%),
+    radial-gradient(150px 90px at 100% 50%, var(--hero-pool), transparent 70%);
+  background-size: 100% 300px;
+  background-position: 0 80px;
+}
+
+/* Lane markings: the yellow centre line and two white lane lines. One dash + gap period is 110px; each strip is
+   one period taller than the plane and slides one period toward the viewer per cycle (transform only). */
+.app-hero-road-line {
+  position: absolute;
+  top: -110px;
+  bottom: 0;
+  width: 8px;
+  translate: -50% 0;
+  background-image: repeating-linear-gradient(to bottom, var(--hero-lane) 0 52px, transparent 52px 110px);
+  animation: app-road-flow 2.8s linear infinite;
+}
+
+.app-hero-road-line[data-centre] {
+  width: 10px;
+  background-image: repeating-linear-gradient(to bottom, var(--hero-dash) 0 58px, transparent 58px 110px);
+}
+
+.app-hero[data-paused] .app-hero-road-line,
+.app-hero[data-paused] .app-hero-beacon,
+.app-hero[data-paused] .app-hero-beacon-glow {
+  animation-play-state: paused;
+}
+
+@keyframes app-road-flow {
+  to {
+    transform: translateY(110px);
+  }
+}
+
+/* Haze where the road meets the skyline, so the plane dissolves into distance instead of ending on a line. */
+.app-hero-road::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--hero-fog) 0%, transparent 30%);
+}
+
+/* The AI survey scan: a sheet of road-marking light passing over the city when the dashboard is first opened in
+   a session - a thin bright leading edge with a soft glow trailing behind it. Windows light up behind it
+   (their delays follow their x position). */
+.app-hero-scan {
+  position: absolute;
+  z-index: 2;
+  inset-block: 0;
+  left: 0;
+  width: 9rem;
+  opacity: 0;
+  background:
+    linear-gradient(90deg, transparent calc(100% - 2px), var(--hero-scan-core) calc(100% - 2px)),
+    linear-gradient(90deg, transparent, var(--hero-scan) 88%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent 4%, #000 26%, #000 80%, transparent);
+  mask-image: linear-gradient(180deg, transparent 4%, #000 26%, #000 80%, transparent);
+}
+
+.app-hero[data-intro] .app-hero-scan {
+  animation: app-hero-scan 2.1s cubic-bezier(0.45, 0, 0.25, 1) 0.25s both;
+}
+
+@keyframes app-hero-scan {
+  0% {
+    opacity: 0;
+    transform: translateX(-9rem);
+  }
+  10% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(48rem);
+  }
+}
+
+.app-hero[data-intro] .app-hero-skyline .lit {
+  animation: app-window-on 0.6s ease-out both;
+  animation-delay: var(--on, 0s);
+}
+
+@keyframes app-window-on {
+  from {
+    opacity: 0;
+  }
+}
+
+.app-hero[data-intro] .app-hero-road {
+  animation: app-fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The key-number tiles under the hero (StatCard: label row, value, hint) keep their loaded height while they
+   load: the value line matches its 2rem skeleton and the hint keeps its line (two on phones, where hints wrap),
+   so the tiles - and everything below them - stay put when the figures arrive. */
+.app-tiles > * > * > :nth-child(2) {
+  min-height: 2rem;
+}
+
+.app-tiles > * > * > p:last-child {
+  min-height: 1rem;
+}
+
+@media (max-width: 639.98px) {
+  .app-tiles > * > * > p:last-child {
+    min-height: 2rem;
+  }
+}
+
+/* Placeholders that hold the live summary's lines and the second action's slot while the dashboard loads.
+   They appear only when the data is slow (after the skeleton gate's 300 ms), so a quick load never flashes
+   them, yet the space is held from the first frame and nothing below moves when the data arrives. */
+.app-hero-pending {
+  animation: app-fade-in 240ms ease-out 300ms both;
+}
+
+/* Phones: the scene becomes a band across the top of the hero, above the copy. */
+@media (max-width: 639.98px) {
+  .app-hero-art {
+    --horizon: 56%;
+    inset-block: 0 auto;
+    left: 0;
+    width: 100%;
+    height: 8.75rem;
+    -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent);
+    mask-image: linear-gradient(180deg, #000 72%, transparent);
+  }
+
+  .app-hero-skyline,
+  .app-hero-beacons {
+    height: 64%;
+  }
+
+  .app-hero-road {
+    left: -30%;
+    right: -30%;
+    perspective-origin: 50% 0%;
+  }
+
+  .app-hero-road-plane {
+    left: 50%;
+    width: 300px;
+  }
+}
+
+/* --- 2. AI readouts --------------------------------------------------------------
+   Bars that grow to the model's real value the first time they are seen, with a small lit tip at the
+   growing edge - the AI "reading" the number (ConfidenceBar, probability and severity-factor bars). */
+.app-bar-fill {
+  position: relative;
+  transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-bar-fill::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  translate: 0 -50%;
+  border-radius: 999px;
+  background: radial-gradient(closest-side, rgb(255 246 214 / 0.95), rgb(255 214 102 / 0.55) 45%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-bar-fill[data-seen]::after {
+  animation: app-bar-tip 1.05s ease-out both;
+  animation-delay: inherit;
+}
+
+@keyframes app-bar-tip {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* --- 2b. AI scan overlay (report flow) -------------------------------------------
+   A dark viewfinder in both themes - the AI's view of the photo at night. The light sheet sweeps top to
+   bottom over a faint survey grid; on the result the brackets travel onto the detected region, its outline
+   draws itself, the rest of the photo dims and a highway-sign label pops up on a small post. */
+.app-scan {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgb(255 190 80 / 0.07), transparent 60%),
+    linear-gradient(180deg, #121b1c 0%, #0b1213 100%);
+  border: 1px solid rgb(255 255 255 / 0.07);
+  box-shadow: var(--elev-raised);
+  color: #ffffff;
+}
+
+.app-scan-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgb(255 212 71 / 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 212 71 / 0.16) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+  opacity: 0.6;
+  transition: opacity 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-scan[data-phase="locked"] .app-scan-grid {
+  opacity: 0;
+}
+
+/* The light sheet: a bright line with a soft glow trailing above it, swept with a transform. */
+.app-scan-beam {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: app-scan-beam 2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.app-scan-beam::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  height: 42%;
+  background: linear-gradient(180deg, transparent, rgb(245 183 0 / 0.08) 55%, rgb(255 212 71 / 0.3));
+}
+
+.app-scan-beam::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: -1px;
+  height: 2px;
+  background: #ffe27a;
+  box-shadow:
+    0 0 10px 2px rgb(245 183 0 / 0.8),
+    0 0 28px 6px rgb(245 183 0 / 0.35);
+}
+
+@keyframes app-scan-beam {
+  0% {
+    transform: translateY(0%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.app-scan-brackets {
+  z-index: 3;
+}
+
+.app-scan-corner {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 0 solid #ffd447;
+  filter: drop-shadow(0 0 4px rgb(245 183 0 / 0.65));
+}
+
+.app-scan-corner[data-corner="tl"] {
+  top: -3px;
+  left: -3px;
+  border-top-width: 3px;
+  border-left-width: 3px;
+  border-top-left-radius: 7px;
+}
+
+.app-scan-corner[data-corner="tr"] {
+  top: -3px;
+  right: -3px;
+  border-top-width: 3px;
+  border-right-width: 3px;
+  border-top-right-radius: 7px;
+}
+
+.app-scan-corner[data-corner="bl"] {
+  bottom: -3px;
+  left: -3px;
+  border-bottom-width: 3px;
+  border-left-width: 3px;
+  border-bottom-left-radius: 7px;
+}
+
+.app-scan-corner[data-corner="br"] {
+  bottom: -3px;
+  right: -3px;
+  border-bottom-width: 3px;
+  border-right-width: 3px;
+  border-bottom-right-radius: 7px;
+}
+
+/* Brackets that are not on a region (scanning, or nothing detected) sit inside the photo edge. */
+.app-scan-brackets:not([data-locked]) .app-scan-corner {
+  margin: 10px;
+}
+
+.app-scan-box {
+  z-index: 2;
+}
+
+.app-scan-edge {
+  position: absolute;
+  background: #ffd447;
+  box-shadow: 0 0 6px rgb(245 183 0 / 0.7);
+}
+
+.app-scan-box:not(.app-scan-box-primary) .app-scan-edge {
+  background: rgb(255 212 71 / 0.7);
+  box-shadow: none;
+}
+
+.app-scan-box-approx .app-scan-edge[data-edge="top"],
+.app-scan-box-approx .app-scan-edge[data-edge="bottom"] {
+  background: repeating-linear-gradient(90deg, #ffd447 0 7px, transparent 7px 12px);
+}
+
+.app-scan-box-approx .app-scan-edge[data-edge="left"],
+.app-scan-box-approx .app-scan-edge[data-edge="right"] {
+  background: repeating-linear-gradient(180deg, #ffd447 0 7px, transparent 7px 12px);
+}
+
+.app-scan-edge[data-edge="top"] {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.app-scan-edge[data-edge="right"] {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+.app-scan-edge[data-edge="bottom"] {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+
+.app-scan-edge[data-edge="left"] {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+/* Everything outside the primary region dims (a spotlight cut out with a spread shadow). */
+.app-scan-spotlight {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  box-shadow: 0 0 0 200vmax rgb(4 8 9 / 0.5);
+  pointer-events: none;
+}
+
+/* Highway-sign label on a post: green field, inset white border, white type. */
+.app-scan-label {
+  position: absolute;
+  bottom: calc(100% + 9px);
+  max-width: min(15rem, 80vw);
+  padding: 4px 9px 3px;
+  border-radius: 5px;
+  background: #0b6e4f;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  box-shadow:
+    inset 0 0 0 2px #0b6e4f,
+    inset 0 0 0 3px #ffffff,
+    0 8px 18px -8px rgb(0 0 0 / 0.7);
+}
+
+.app-scan-label-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-scan-label[data-anchor="start"] {
+  left: -2px;
+}
+
+.app-scan-label[data-anchor="end"] {
+  right: -2px;
+}
+
+.app-scan-label-inside {
+  bottom: auto;
+  top: 6px;
+}
+
+.app-scan-label[data-anchor="start"].app-scan-label-inside {
+  left: 6px;
+}
+
+.app-scan-label[data-anchor="end"].app-scan-label-inside {
+  right: 6px;
+}
+
+/* The post under the label, down to the region's edge. */
+.app-scan-post {
+  position: absolute;
+  top: 100%;
+  width: 2px;
+  height: 9px;
+  background: #d3dad7;
+}
+
+.app-scan-post[data-anchor="start"] {
+  left: 12px;
+}
+
+.app-scan-post[data-anchor="end"] {
+  right: 12px;
+}
+
+/* Keywords the text model read, marked like a highlighter swipe. */
+.app-scan-mark {
+  color: inherit;
+  background-color: transparent;
+  border-radius: 3px;
+  padding-inline: 1px;
+  background-image: linear-gradient(rgb(245 183 0 / 0.38), rgb(245 183 0 / 0.38));
+  background-repeat: no-repeat;
+  background-position: 0 85%;
+  background-size: 100% 55%;
+  animation: app-mark-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--mark-delay, 0s);
+}
+
+@keyframes app-mark-in {
+  from {
+    background-size: 0% 55%;
+  }
+}
+
+.app-scan[data-phase="scanning"] .app-scan-dot {
+  animation: app-scan-dot 1s ease-in-out infinite;
+}
+
+@keyframes app-scan-dot {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* --- 3. Sticky action bars (phones) ----------------------------------------------
+   Below md the primary action of a long screen stays under the thumb. The bars are in-flow `position: sticky`
+   (not fixed): they rest at the end of their container once the reader gets there, so they never cover the
+   last content and need no portal (page transforms cannot re-anchor them). Citizens also have the bottom tab
+   bar with its raised Report button, so bars float clear of it. */
+:root {
+  --app-dock-clearance: 0.75rem;
+}
+
+body:has(nav[aria-label="Quick navigation"]) {
+  --app-dock-clearance: 5.4rem;
+}
+
+@media (max-width: 767.98px) {
+  /* The report wizard's Back / Continue row and form footers (resolution update). */
+  .app-wizard-bar,
+  .app-sticky-actions {
+    position: sticky;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--app-dock-clearance));
+    z-index: 20;
+  }
+
+  .app-wizard-bar {
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 -14px 28px -22px rgb(15 22 23 / 0.55);
+  }
+
+  .app-sticky-actions {
+    margin-inline: -0.5rem;
+    padding: 0.625rem 0.5rem;
+    border-radius: 12px;
+    background: var(--c-surface);
+    box-shadow: 0 -14px 28px -22px rgb(15 22 23 / 0.55);
+  }
+
+  .dark .app-wizard-bar,
+  .dark .app-sticky-actions {
+    box-shadow: 0 -16px 30px -18px rgb(0 0 0 / 0.85);
+  }
+}
+
+/* The floating dock of the detail pages: the page's next action, always within reach on a phone. */
+.app-dock {
+  position: sticky;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--app-dock-clearance));
+  z-index: 30;
+  margin-top: 1.25rem;
+  pointer-events: none;
+}
+
+.app-dock > * {
+  pointer-events: auto;
+}
+
+/* Out of sight while the page's own copy of the action is on screen (MobileActionDock `watch`): it is inert
+   then, and never catches a tap meant for the content under it. */
+.app-dock:not([data-shown]) > * {
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .app-dock {
+    display: none;
+  }
+}
+
+/* --- 4. Before / after wipe divider ----------------------------------------------
+   White hairline at rest; while the reveal sweeps across, it burns road-marking yellow. */
+.app-compare-divider {
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(15 22 23 / 0.35);
+  transition:
+    background-color 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-compare[data-wiping] .app-compare-divider {
+  background: #ffe27a;
+  box-shadow:
+    0 0 14px 3px rgb(245 183 0 / 0.75),
+    0 0 0 1px rgb(15 22 23 / 0.2);
+}
+
+/* Detection boxes on a complaint photo close in on their region when the photo is first seen. */
+@keyframes app-box-in {
+  from {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+}
+
+.app-box-in {
+  animation: app-box-in 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* --- 5. Reduced motion, forced colours ------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .app-hero *,
+  .app-hero *::before,
+  .app-hero *::after,
+  .app-scan *,
+  .app-scan *::before,
+  .app-scan *::after,
+  .app-bar-fill::after,
+  .app-box-in {
+    animation: none !important;
+  }
+
+  .app-hero-scan {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .app-hero-art {
+    display: none;
+  }
+}

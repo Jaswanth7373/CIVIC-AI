@@ -1,0 +1,36 @@
+# CivicAI - YOLOv8 dataset definition (Ultralytics YOLO format)
+#
+# Train with:   venv/Scripts/python.exe scripts/train_yolo.py --data ai/vision/dataset.yaml
+#
+# Expected layout below `path`:
+#   images/train/*.jpg   labels/train/*.txt
+#   images/val/*.jpg     labels/val/*.txt
+#   images/test/*.jpg    labels/test/*.txt      (optional)
+#
+# Every label file has one line per object:
+#   <class_id> <x_center> <y_center> <width> <height>
+# with all coordinates normalised to 0..1 (relative to the image size). An image without objects gets an
+# empty label file (a "background" example that teaches the detector what is NOT an issue).
+#
+# Class ids follow `names` below; the names equal the CivicAI category slugs, so detections map directly
+# onto categories (ai/vision/config.py LABEL_SYNONYMS also accepts dataset-specific names such as the
+# RDD2022 codes D00/D10/D20 -> road_crack and D40 -> pothole).
+#
+# `path` is resolved relative to THIS file by scripts/train_yolo.py (Ultralytics itself would resolve a
+# relative path against its global datasets directory).
+
+path: ../../ml_models/datasets/civicai
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: pothole
+  1: garbage
+  2: drainage
+  3: streetlight
+  4: water_leak
+  5: open_manhole
+  6: road_crack
+  7: fallen_tree
+  8: other
