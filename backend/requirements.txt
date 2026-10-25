@@ -16,6 +16,9 @@ django-filter>=25.1
 mysqlclient>=2.2.7 ; sys_platform == "win32"
 PyMySQL>=1.1
 dj-database-url>=2.3
+# PostgreSQL (Supabase) via DATABASE_URL. psycopg2-binary rather than psycopg 3: Windows Smart App Control blocks
+# the unsigned libpq DLL of psycopg-binary 3.x, while psycopg2-binary's loads.
+psycopg2-binary>=2.9.10
 
 # --- Config / utilities ---
 python-dotenv>=1.0

@@ -123,7 +123,9 @@ ASGI_APPLICATION = "config.asgi.application"
 # ---------------------------------------------------------------------------
 # Database (MySQL by default)
 #   DB_ENGINE=mysql   -> uses DATABASE_NAME/USER/PASSWORD/HOST/PORT
-#   DATABASE_URL=...  -> cloud MySQL connection string (overrides the above)
+#   DATABASE_URL=...  -> connection string, overrides the above: PostgreSQL (e.g. Supabase,
+#                        postgresql://postgres:<url-encoded password>@db.<project>.supabase.co:5432/postgres
+#                        ?sslmode=require) or a cloud MySQL
 #   DB_ENGINE=sqlite  -> local fallback for quick experiments / CI
 # ---------------------------------------------------------------------------
 DB_ENGINE = (env("DB_ENGINE", "mysql") or "mysql").lower()
@@ -145,7 +147,8 @@ except ImportError:  # pragma: no cover
 if DATABASE_URL:
     import dj_database_url
 
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+    # health checks: a cloud database (Supabase, a pooler) may close idle connections between requests
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True)}
     if DATABASES["default"]["ENGINE"].endswith("mysql"):
         DATABASES["default"].setdefault("OPTIONS", {}).update(
             {"charset": "utf8mb4", "init_command": "SET sql_mode='STRICT_TRANS_TABLES'"}

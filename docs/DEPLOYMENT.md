@@ -1,7 +1,7 @@
 # Deployment
 
 This guide puts CivicAI on the internet with free-tier services: the Django API on **Render**, the React web app
-on **Vercel** and a **cloud MySQL 8** database. Everything it describes comes from the files in the repository
+on **Vercel** and a **Supabase PostgreSQL** database (a cloud MySQL 8 server works too). Everything it describes comes from the files in the repository
 (`render.yaml`, `backend/build.sh`, `backend/gunicorn.conf.py`, `backend/Procfile`, `backend/.env.example`,
 `backend/config/settings.py`, `frontend/vercel.json`) and from measurements on the development laptop.
 
@@ -14,7 +14,7 @@ once.
 flowchart LR
     U["Browser"] -- "HTML, JS, CSS" --> V["Vercel<br/>frontend/dist + vercel.json"]
     U -- "HTTPS /api/ and /media/" --> R["Render web service<br/>gunicorn + Django (backend/)"]
-    R -- "DATABASE_URL" --> M[("Cloud MySQL 8")]
+    R -- "DATABASE_URL" --> M[("Supabase PostgreSQL")]
     R -- "HTTPS, geocoding" --> N["OpenStreetMap Nominatim"]
     U -- "map tiles" --> T["OpenStreetMap tile servers"]
 ```
@@ -22,6 +22,7 @@ flowchart LR
 ## Contents
 
 - [Before you start](#before-you-start)
+- [Supabase PostgreSQL](#supabase-postgresql)
 - [Cloud MySQL](#cloud-mysql)
 - [API on Render](#api-on-render)
 - [Web app on Vercel](#web-app-on-vercel)
@@ -36,12 +37,43 @@ flowchart LR
 - Push the repository to GitHub; Render and Vercel deploy from a Git repository. `.gitignore` keeps `.env`, the
   virtual environment, `backend/media/`, SQLite files and model weights out of Git, so no secret or upload is
   published.
-- Create accounts on Render, Vercel and a MySQL provider.
+- Create accounts on Render, Vercel and Supabase (or a MySQL provider).
 - The examples below use the placeholder addresses `https://civicai-api.onrender.com` for the API and
   `https://civicai.vercel.app` for the web app. Replace them with the addresses your services get.
 
 The order matters a little: create the database first (the API's build runs the migrations), then the API, then
 the web app, and finally put the web app's address into the API's CORS settings.
+
+## Supabase PostgreSQL
+
+The project's database is a Supabase PostgreSQL 17 project (project ref `iutdabdqfkhwtrncautr`, region Tokyo,
+`ap-northeast-1`). Django only needs a connection string in `DATABASE_URL`; the tables come from Django's own
+migrations, so the Supabase CLI (`supabase init` / `link`), the project URL and the publishable key are not used.
+
+| Where the API runs | `DATABASE_URL` |
+|---|---|
+| Development laptop (has IPv6): direct connection, used in `backend/.env` | `postgresql://postgres:PASSWORD@db.iutdabdqfkhwtrncautr.supabase.co:5432/postgres?sslmode=require` |
+| Render (IPv4 only): session pooler | `postgresql://postgres.iutdabdqfkhwtrncautr:PASSWORD@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres?sslmode=require` |
+
+- Percent-encode special characters in the password (`@` becomes `%40`).
+- The direct host `db.<ref>.supabase.co` has only an IPv6 address on Supabase's free plan, so Render, which has no
+  outbound IPv6, must use the session pooler. Use the session pooler on port 5432, not the transaction pooler on
+  port 6543, which does not keep a session between transactions.
+- The driver is `psycopg2-binary` (in `requirements.txt`). psycopg 3 was tried first, but Windows Smart App Control
+  blocks its unsigned `libpq` DLL.
+- `config/settings.py` keeps connections open for 600 s and checks them before reuse, since a cloud database or
+  pooler may close idle connections.
+- **Latency.** Measured on 25 October 2026 from the development laptop (Hyderabad) to the Tokyo region: 108 ms per
+  query, against under 1 ms for MySQL on the laptop. A complaint's detail page (13 queries) took 2.1 s instead of
+  0.12 s and the admin overview 3.2 s instead of 0.7 s. A project in the Mumbai region (`ap-south-1`), and an API
+  hosted near it, would cut this considerably; Supabase cannot move an existing project to another region.
+- **Data.** On 25 October 2026 `manage.py migrate` created the tables and the existing data (6,575 rows: reference
+  data, accounts, the demo dataset and one real user's complaint) was copied from the local MySQL database with
+  primary keys and timestamps kept; the row counts of all tables matched. Uploaded photos are not in the database:
+  they stay in `backend/media` (see [Uploaded photos](#uploaded-photos-and-the-free-plans-disk)).
+- **Compatibility.** The full backend suite (720 tests) passed on PostgreSQL 17.7 (EDB build, local) on the same day.
+
+To go back to the local MySQL database, remove or comment out the `DATABASE_URL` line in `backend/.env`.
 
 ## Cloud MySQL
 
@@ -140,8 +172,7 @@ The blueprint sets most values. Enter the ones marked "you" in the Render dashbo
 | `FRONTEND_URL` | you | The web app's address; stored in the settings but not used by the current code |
 | `TIME_ZONE` | `Asia/Kolkata` | Time zone for analytics buckets and dates |
 | `SECURE_SSL_REDIRECT` | `True` | Redirect plain HTTP to HTTPS |
-| `DB_ENGINE` | `mysql` | Ignored while `DATABASE_URL` is set |
-| `DATABASE_URL` | you | See [Cloud MySQL](#cloud-mysql) |
+| `DATABASE_URL` | you | The session pooler URL; see [Supabase PostgreSQL](#supabase-postgresql) |
 | `JWT_ACCESS_MINUTES`, `JWT_REFRESH_DAYS` | `60`, `7` | Token lifetimes |
 | `MODEL_MODE` | `demo` | `production` needs more memory; see [Production AI mode](#production-ai-mode) |
 | `MODEL_PATH` | `./ml_models` | Model cache folder, relative to `backend/` |
@@ -177,7 +208,7 @@ host.
 `SERVE_MEDIA=True` lets Django serve the uploaded photos from `backend/media` on the instance. The storage backend
 is Django's local file system; object storage (S3 and similar) is not implemented. On Render's free plan the
 instance disk is not persistent: files written while the service runs disappear when it restarts or redeploys,
-while the complaint rows stay in MySQL. After a restart those complaints show broken photo links.
+while the complaint rows stay in the database. After a restart those complaints show broken photo links.
 
 - For a short demonstration this is acceptable if you upload the photos after the last deploy.
 - For a lasting deployment, use a paid instance with a persistent disk and point `MEDIA_DIR` at its mount path

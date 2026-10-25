@@ -3,10 +3,11 @@
 # One web service built from backend/ (Python version from backend/.python-version):
 #   build:  bash build.sh  - pip install, collectstatic, migrate, init_civicai --keep-existing
 #   start:  gunicorn config.wsgi -c gunicorn.conf.py
-# The database is an external MySQL 8 server (Railway, Aiven, ...) given as DATABASE_URL, e.g.
-#   mysql://user:password@host:3306/civicai
-# For TLS append ?ssl_verify_cert=true (certificate from a public CA) or ?ssl-ca=<CA file path relative to backend/>.
-# Not ?ssl_mode=REQUIRED: Render installs the PyMySQL driver, which rejects it (docs/DEPLOYMENT.md, "TLS options").
+# The database is Supabase PostgreSQL, given as DATABASE_URL. Use the IPv4 session pooler (Supabase's direct host
+# db.<ref>.supabase.co is IPv6-only, which Render cannot reach), with the password percent-encoded (@ -> %40):
+#   postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
+# An external MySQL 8 server (mysql://user:password@host:3306/civicai) works too; for its TLS options see
+# docs/DEPLOYMENT.md, "TLS options".
 # Values marked "sync: false" are secrets / deployment-specific URLs entered in the Render dashboard; they are never
 # stored in this file. The frontend (Vercel) is configured separately with VITE_API_URL=https://<service>/api.
 # The build runs the script through bash, so it does not depend on the file's executable bit in git.
@@ -39,9 +40,7 @@ services:
         value: Asia/Kolkata
       - key: SECURE_SSL_REDIRECT
         value: "True"
-      # --- Database (MySQL 8) ---
-      - key: DB_ENGINE
-        value: mysql
+      # --- Database (Supabase PostgreSQL session pooler URL, see the comment at the top) ---
       - key: DATABASE_URL
         sync: false
       # --- JWT ---

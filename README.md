@@ -47,6 +47,7 @@ verified → closed`, and can also be `rejected` or `reopened`.
 - [Quick start on Windows](#quick-start-on-windows)
 - [Share with your team (ngrok)](#share-with-your-team-ngrok)
 - [Manual setup](#manual-setup)
+- [Supabase (PostgreSQL)](#supabase-postgresql)
 - [MySQL setup](#mysql-setup)
 - [Demo accounts](#demo-accounts)
 - [AI modes](#ai-modes)
@@ -140,7 +141,7 @@ settings. [docs/AI_ENGINE.md](docs/AI_ENGINE.md) explains each component in dept
 | Layer | Technology |
 |---|---|
 | Backend | Python 3.13.3, Django 5.2.18, Django REST Framework 3.18.3, Simple JWT 5.5.1 (rotation and blacklist), django-filter 26.2, django-cors-headers 4.9.0, WhiteNoise 6.12.0, gunicorn (Linux deployments) |
-| Database | MySQL 8.0.42 through mysqlclient 2.3.0 (Windows) or PyMySQL 1.2.3 (elsewhere), dj-database-url 3.1.2; SQLite as a local fallback |
+| Database | Supabase PostgreSQL 17 through psycopg2-binary 2.9 (via `DATABASE_URL`); MySQL 8.0.42 through mysqlclient 2.3.0 (Windows) or PyMySQL 1.2.3 (elsewhere), dj-database-url 3.1.2; SQLite as a local fallback |
 | AI and data | NumPy 2.4.3, pandas 3.0.1, SciPy 1.17.1, scikit-learn 1.8.0, OpenCV (opencv-python-headless 5.0.0.93), ImageHash 4.3.2, Pillow 12.1.1 |
 | Production AI (`requirements-ml.txt`) | PyTorch 2.14.0, Transformers 5.17.0, Sentence-Transformers 6.1.0; Ultralytics (YOLOv8) is listed but not installed on the development machine |
 | Reports and jobs | ReportLab 5.0.1 (PDF), Celery 5.6.3 + redis 8.1.0 (optional; a built-in scheduler is the default) |
@@ -162,7 +163,7 @@ flowchart LR
         SVC --> AI["AI engine ai/<br/>vision, nlp, multimodal, severity,<br/>priority, duplicate, geospatial, verification"]
         JOBS["Built-in scheduler or Celery<br/>SLA check, hotspot scan"] --> SVC
     end
-    SVC --> DB[("MySQL 8<br/>SQLite fallback")]
+    SVC --> DB[("PostgreSQL (Supabase)<br/>MySQL 8 / SQLite")]
     SVC --> MEDIA[("Uploaded photos<br/>MEDIA_ROOT")]
     API -- "geocoding proxy, 24 h cache" --> NOM["Nominatim"]
 ```
@@ -277,6 +278,25 @@ npm run dev                # http://localhost:5173
 
 `npm run build` writes the production build to `frontend\dist`, and `npm run lint` runs ESLint.
 
+## Supabase (PostgreSQL)
+
+Since 25 October 2026 the platform's database is a **Supabase PostgreSQL 17** project. `backend\.env` holds the
+connection string, which overrides the MySQL settings:
+
+```
+DATABASE_URL=postgresql://postgres:PASSWORD@db.<project-ref>.supabase.co:5432/postgres?sslmode=require
+```
+
+- Percent-encode special characters in the password (`@` becomes `%40`). The Supabase CLI, project URL and
+  publishable key are not needed: Django creates the tables with `manage.py migrate`.
+- The driver is `psycopg2-binary` (installed by `requirements.txt`).
+- Every query crosses the network: from the development laptop to the project's Tokyo region a query takes about
+  108 ms, so pages are slower than on a local MySQL (a complaint's details 2.1 s instead of 0.12 s), and
+  `seed_demo` takes far longer. A Supabase project in the Mumbai region would be faster from India.
+- To go back to the local MySQL database, comment out the `DATABASE_URL` line in `backend\.env`.
+- Hosting the API elsewhere (Render) needs the IPv4 session pooler address; see
+  [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#supabase-postgresql), which also records how the data was moved.
+
 ## MySQL setup
 
 MySQL 8 is the main database; the code avoids database-specific features so that SQLite works as a fallback.
@@ -373,18 +393,20 @@ number.
 
 ## Running the tests
 
-Results of 18 October 2026 on the development laptop:
+Results on the development laptop (18 October 2026 unless a row says otherwise):
 
 | Layer | Command (from the folder shown) | Result |
 |---|---|---|
-| Backend API, services and AI engine (`backend/`) | `venv\Scripts\python.exe manage.py test --noinput` | 707 tests, all passed: 55 s on in-memory SQLite, 62 s on MySQL 8.0.42 |
+| Backend API, services and AI engine (`backend/`) | `venv\Scripts\python.exe manage.py test --noinput` | 720 tests, all passed on 25 October 2026: 62 s on in-memory SQLite, 216 s on PostgreSQL 17.7 (local); the 707-test run of 18 October also passed on MySQL 8.0.42 (62 s) |
 | AI engine only, no Django (`backend/`) | `venv\Scripts\python.exe -m unittest discover -s ai/tests -t .` | 224 tests, all passed (19 s) |
 | Live API smoke test (`backend/`) | `venv\Scripts\python.exe scripts\smoke_test_api.py --base http://127.0.0.1:8001/api ...` (a copy, see below) | 97 of 97 checks passed against a private copy of the demo data |
 | Browser end-to-end tests (repository root) | `python -m pytest e2e -v` | 112 tests, all passed (226 s, against a private copy of the final demo data) |
 | Frontend static checks (`frontend/`) | `npm run lint` and `npm run build` | 0 lint problems; build without warnings |
 
-The test runner uses the database `DB_ENGINE` selects: an in-memory database with `DB_ENGINE=sqlite`, or a temporary
-`test_<DATABASE_NAME>` database on MySQL (the MySQL user needs the right to create it). The smoke test and most
+The test runner uses the database `DATABASE_URL` or `DB_ENGINE` selects: an in-memory database with `DB_ENGINE=sqlite`, or a
+temporary `test_<name>` database on the configured server. While `backend\.env` points at Supabase, run the tests
+with `$env:DATABASE_URL=''; $env:DB_ENGINE='sqlite'` first, so they do not create a slow test database in the cloud
+project. The smoke test and most
 end-to-end tests create data, so run them against a copy of the database served on another port, never against the
 database you present; [docs/TESTING.md](docs/TESTING.md#working-on-a-copy-of-the-demo-database) shows how to make
 one in a few commands. The same page describes every layer, the last bug the browser tests caught and the evaluation

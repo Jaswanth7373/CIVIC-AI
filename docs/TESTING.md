@@ -13,8 +13,8 @@ the latest runs, made on the final code; runs made before the last fixes are mar
 
 | Layer | Where | Tests | Latest result |
 |---|---|---|---|
-| Backend: API, services, data rules and AI engine | `backend/apps/*/test*.py`, `backend/ai/tests/` | 707 | All passed on in-memory SQLite (55.1 s) and on MySQL 8.0.42 (61.7 s) |
-| AI engine on its own, without Django | `backend/ai/tests/` | 224 (part of the 707) | All passed (17.9 s) |
+| Backend: API, services, data rules and AI engine | `backend/apps/*/test*.py`, `backend/ai/tests/` | 720 | 25 October 2026: all passed on in-memory SQLite (62 s) and on PostgreSQL 17.7 (216 s, local EDB build, the engine of the Supabase database); the 707 tests of 18 October also passed on MySQL 8.0.42 (61.7 s) |
+| AI engine on its own, without Django | `backend/ai/tests/` | 225 (part of the 720) | All passed (23 s) |
 | Live API smoke test | `backend/scripts/smoke_test_api.py` | 97 checks | All passed against a private copy of the demo data |
 | Browser end-to-end tests | `e2e/` | 112 | All passed (3 min 46 s); see [Latest run](#latest-run) |
 | Frontend static checks | `frontend/` | ESLint and production build | 0 lint problems; build without warnings |
@@ -95,6 +95,8 @@ $env:PYTHONUTF8 = '1'                        # dump and load in UTF-8, whatever 
 venv\Scripts\python.exe manage.py dumpdata --exclude contenttypes --exclude auth.permission `
     --exclude admin.logentry --exclude sessions.session --exclude token_blacklist --output "$copy\data.json"
 # 2. load it into a separate SQLite file with its own copy of the photos
+#    (blank DATABASE_URL first: while .env points at Supabase it would otherwise win over DB_ENGINE)
+$env:DATABASE_URL = ''
 $env:DB_ENGINE = 'sqlite'; $env:SQLITE_NAME = "$copy\civicai.sqlite3"; $env:MEDIA_DIR = "$copy\media"
 $env:PERIODIC_CHECKS = 'False'              # no SLA or hotspot alerts in the middle of a test run
 venv\Scripts\python.exe manage.py migrate --noinput
@@ -124,6 +126,12 @@ in-memory database. With MySQL it creates a temporary `test_<DATABASE_NAME>` dat
 drops it at the end, so the MySQL user needs the right to create that database; `--noinput` lets Django replace a
 leftover test database without asking. PowerShell example for a one-off MySQL run: `$env:DB_ENGINE='mysql';
 venv\Scripts\python.exe manage.py test --noinput`.
+
+While `backend\.env` sets `DATABASE_URL` to the Supabase project, the suite would create its test database there,
+where every query takes about 108 ms. Override it for the run instead: `$env:DATABASE_URL=''; $env:DB_ENGINE='sqlite'`
+(in-memory), or point `DATABASE_URL` at a local PostgreSQL server. The PostgreSQL run above used the EDB portable
+binaries of PostgreSQL 17.7 (`initdb`, `pg_ctl start` on port 5544) with
+`DATABASE_URL=postgresql://postgres@127.0.0.1:5544/postgres`.
 
 While the test suite runs, `config/settings.py` switches to a fast password hasher and turns off the built-in
 scheduler, the rate limits are off (the tests that check them switch them back on), and every test module that
